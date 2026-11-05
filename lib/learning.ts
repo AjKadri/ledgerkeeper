@@ -14,7 +14,10 @@ export function countQuestions(qs: Q[], ruleKeys: Set<string>): Counts {
 }
 
 export type Parsed = { rule: Rule; blob: string; at: string };
+export type RuleEvent = { at: string; match: string; kind: "saved" | "updated"; value: string; from?: string; blob: string };
 export type Resolved = {
+  ats: Record<string, string>;                          // match -> created_at of the winning rule
+  events: RuleEvent[];                                  // newest first: "saved" the first time, "updated" when the answer changed
   rules: Rule[];                                        // newest first, one per match
   blobs: Record<string, string>;                        // match -> blob of the winning rule
   conflicts: { match: string; labels: string[] }[];     // labels[0] = winner (newest)
@@ -34,8 +37,24 @@ export function resolveRules(parsed: Parsed[]): Resolved {
     if (!labels.includes(v)) labels.push(v);
     seen.set(m, labels);
   }
+  const ats: Record<string, string> = {};
+  for (const r of rules) ats[r.match] = sorted.find((p) => p.rule.match.toLowerCase() === r.match)!.at;
+  // Per match, oldest to newest: first answer = saved; a different answer later = updated from A to B.
+  const events: RuleEvent[] = [];
+  const byMatch = new Map<string, Parsed[]>();
+  for (const p of [...sorted].reverse()) byMatch.set(p.rule.match.toLowerCase(), [...(byMatch.get(p.rule.match.toLowerCase()) ?? []), p]);
+  for (const [match, list] of byMatch) {
+    let prev: string | undefined;
+    for (const p of list) {
+      const v = ruleValue(p.rule);
+      if (prev === undefined) events.push({ at: p.at, match, kind: "saved", value: v, blob: p.blob });
+      else if (prev !== v) events.push({ at: p.at, match, kind: "updated", value: v, from: prev, blob: p.blob });
+      prev = v;
+    }
+  }
+  events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
   const conflicts = [...seen].filter(([, l]) => l.length > 1).map(([match, labels]) => ({ match, labels }));
-  return { rules, blobs, conflicts, updates: conflicts.map((c) => ({ match: c.match, from: c.labels[1], to: c.labels[0] })) };
+  return { rules, blobs, ats, events, conflicts, updates: conflicts.map((c) => ({ match: c.match, from: c.labels[1], to: c.labels[0] })) };
 }
 
 export type StoredOutcome = Outcome & { blob: string; at: string };

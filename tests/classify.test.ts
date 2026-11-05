@@ -159,3 +159,18 @@ test("answer options: transfers describe the counterparty, contracts what they d
   assert.equal(friendly("kind:person", "0x1::mod"), "Payment");
   assert.equal(friendly("kind:person", "0xabc"), "A person or business");
 });
+
+test("rule events: saved first, updated when the answer changes, with times and winning timestamps", () => {
+  const r = resolveRules([
+    { rule: { match: "0xa", kind: "exchange" }, blob: "b1", at: "2026-11-06T10:00:00Z" },
+    { rule: { match: "0xa", kind: "own" }, blob: "b2", at: "2026-11-06T10:05:00Z" },
+    { rule: { match: "0xb", label: "swap" }, blob: "b3", at: "2026-11-06T10:02:00Z" },
+  ]);
+  assert.deepEqual(r.events.map((e) => [e.match, e.kind, e.from ?? null, e.value]), [
+    ["0xa", "updated", "kind:exchange", "kind:own"],
+    ["0xb", "saved", null, "label:swap"],
+    ["0xa", "saved", null, "kind:exchange"],
+  ]);
+  assert.equal(r.ats["0xa"], "2026-11-06T10:05:00Z");
+  assert.equal(r.ats["0xb"], "2026-11-06T10:02:00Z");
+});

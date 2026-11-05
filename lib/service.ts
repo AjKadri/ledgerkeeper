@@ -3,7 +3,7 @@ import { ADDRESS_RE, NAMESPACE_RE } from "./config";
 import { UserError } from "./errors";
 import { classify, questionsFrom, type Rule } from "./classify";
 import { getHistory, inRange, emptyMessage } from "./history";
-import { countQuestions, latestOutcome } from "./learning";
+import { countQuestions, latestOutcome, ruleValue } from "./learning";
 import { recallRules, writesAllowed, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
 import { USD_BASIS } from "./price";
@@ -47,6 +47,13 @@ export async function runImport(body: any) {
     samples: results.filter((r) => r.questionKey === q.key).slice(0, 3).map((r) => ({ digest: r.digest, date: r.date, detail: r.detail })),
   }));
   const on = countQuestions(onQs, ruleKeys), off = countQuestions(withoutQs, ruleKeys);
+  // Questions memory already answers: shown briefly, then filed into the drawer by the page.
+  const ruleByKey = new Map(rs.rules.map((r) => [r.match.toLowerCase(), r]));
+  const answeredFromMemory = withoutQs.filter((q) => ruleByKey.has(q.key.toLowerCase())).map((q) => {
+    const r = ruleByKey.get(q.key.toLowerCase())!;
+    return { key: q.key, question: q.question, count: q.count, in: q.in, out: q.out, first: q.first, last: q.last, value: ruleValue(r), blob: rs.blobs[q.key.toLowerCase()] ?? "" };
+  });
+  const ledger = toRows(txs, address, memory ? rs.rules : []);
   const last = latestOutcome(rs.outcomes, address);
   // Approximate USD value of the SUI legs in this import (other coins are not valued).
   const rows = toRows(txs, address, rs.rules).filter((r) => r.usd_value !== "");
@@ -65,7 +72,11 @@ export async function runImport(body: any) {
     reused: off.repeat,
     previousOutcome: last ? { range: last.range, txs: last.txs, asked: last.asked, answered: last.answered, reused: last.reused, blob: last.blob } : null,
     updates: rs.updates,
-    usd,
+    usd, answeredFromMemory, rows: ledger,
+    drawer: {
+      rules: rs.rules, blobs: rs.blobs, ats: rs.ats, events: rs.events, listed: rs.listed, incomplete: rs.incomplete,
+      outcomes: rs.outcomes.map((o) => ({ range: o.range, txs: o.txs, asked: o.asked, answered: o.answered, reused: o.reused, at: o.at, blob: o.blob })),
+    },
     writes: writesAllowed(),
     memoryStats: { rules: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, recalled: rs.recalled, incomplete: rs.incomplete },
   };
@@ -81,5 +92,8 @@ export async function runExport(app: App, body: { address: unknown; namespace: u
     csv: toCsv(rows), rows: rows.length, source: hist.source, cachedAt: hist.cachedAt,
     rules: { count: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, updates: rs.updates, blobs: rs.blobs },
     unknown: rows.filter((r) => r.label === "unknown").length,
+    ledger: rows,
+    rulesList: rs.rules.map((r) => ({ match: r.match, value: ruleValue(r), blob: rs.blobs[r.match] ?? "", at: rs.ats[r.match] ?? "" })),
+    outcomes: rs.outcomes.map((o) => ({ range: o.range, txs: o.txs, asked: o.asked, answered: o.answered, reused: o.reused, at: o.at, blob: o.blob })),
   };
 }

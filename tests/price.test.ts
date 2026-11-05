@@ -57,3 +57,22 @@ test("A and B build the same CSV from the same rules (USD included)", () => {
   const f = load("wallet3");
   assert.equal(toCsv(toRows(f.txs, f.wallet, [])), toCsv(toRows(f.txs, f.wallet, [])));
 });
+
+import { amountLines, short, ago, dates } from "../lib/format.ts";
+
+test("display formatting trims long decimals but keeps the full value for the tooltip and the CSV", () => {
+  assert.deepEqual(amountLines("775.65751487 SUI", "+"), [{ text: "+775.658 SUI", full: "775.65751487 SUI" }]);
+  assert.equal(amountLines("0.000528934 SUI; 0.050972928 CETUS", "+").map((a) => a.text).join(" | "), "+0.000529 SUI | +0.0510 CETUS".replace("0.0510", "0.051"));
+  assert.equal(amountLines("17452000000000 (raw GIFT) GIFT", "+")[0].text, "+17,452,000,000,000 GIFT (raw units)");
+  assert.deepEqual(amountLines("", "+"), []);
+});
+
+test("short addresses, dates and times", () => {
+  assert.equal(short("0x60956e40d8f921affde3cb861de91a6a6a0bab28af7cd1c23e029d46b86a449b"), "0x6095…449b");
+  assert.equal(short("0x33baf2b9efe76d63d07d911a6f6c6bf44e6df068c9eb1491bfcb826656b03209::nft"), "0x33ba…3209::nft");
+  assert.equal(dates("2026-04-30", "2026-06-25"), "30 Apr – 25 Jun");
+  assert.equal(dates("2026-06-25", "2026-06-25"), "25 Jun");
+  const now = Date.parse("2026-11-06T12:00:00Z");
+  assert.equal(ago("2026-11-06T11:58:00Z", now), "2 min ago");
+  assert.equal(ago("2026-11-06T11:59:50Z", now), "just now");
+});

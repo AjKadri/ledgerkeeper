@@ -1,30 +1,43 @@
 import type { ReactNode } from "react";
-import { APP_NAME, DISCLAIMER } from "@/lib/config";
+import type { Metadata, Viewport } from "next";
+import { Schibsted_Grotesk, JetBrains_Mono } from "next/font/google";
+import { APP_NAME } from "@/lib/config";
+import "./globals.css";
 
-export const metadata = { title: `${APP_NAME}: labelled Sui records, answered once`, description: "Labelling for your accountant, not tax advice." };
+const ui = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-ui", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+
+export const metadata: Metadata = {
+  title: `${APP_NAME}: labelled Sui records, answered once`,
+  description: "Label your Sui history for your accountant. Answer each question once; your answers live in your Walrus Memory.",
+  metadataBase: new URL("https://ledgerkeeper.vercel.app"),
+  openGraph: {
+    title: `${APP_NAME}: labelled Sui records, answered once`,
+    description: "Label your Sui history for your accountant. Answer each question once.",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F4F6F8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F1620" },
+  ],
+};
+
+// Applies a saved theme before paint, so there is no flash. Without a saved choice the system setting decides.
+const themeScript = `try{var t=localStorage.getItem("lk-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <head><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
-      <body style={{ fontFamily: "system-ui, sans-serif", maxWidth: 900, margin: "0 auto", padding: 12, lineHeight: 1.45 }}>
-        <style>{`
-          *{box-sizing:border-box} code,td,.wrap{overflow-wrap:anywhere;word-break:break-word}
-          input,select,button{max-width:100%;font-size:16px} button{padding:6px 10px;margin:2px 0}
-          .box{border:1px solid #ccc;border-radius:6px;padding:12px;margin:12px 0}
-          .btns{display:flex;flex-wrap:wrap;gap:6px}
-          .tblwrap{overflow-x:auto}
-          h1{font-size:26px} h3{font-size:18px}
-          @media (max-width:480px){h1{font-size:22px} .box{padding:10px}}
-        `}</style>
-        <h1 style={{ marginBottom: 0 }}>{APP_NAME} <small style={{ fontSize: 14, color: "#666" }}>v0.1</small></h1>
-        <p style={{ marginTop: 4, color: "#555" }}>Answer each unclear question once; your answers are saved as rules in Walrus Memory and reused.</p>
-        {children}
-        <hr style={{ marginTop: 32 }} />
-        <p style={{ fontSize: 13, color: "#666" }}>
-          Labelling for your accountant, not tax advice. History from 23 Jan 2026 only. Chain data via Tatum. Demo memory is visible to the Walrus Memory relayer. {DISCLAIMER}
-        </p>
-      </body>
+    <html lang="en" className={`${ui.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

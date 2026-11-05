@@ -19,6 +19,12 @@ The demo uses a real public wallet with a fictional owner ("Sam"): Cetus swaps a
 
 You can also paste any Sui address (read-only, live through Tatum).
 
+## What it looks like
+
+![After import 2 with memory on: 0 repeat questions, the memory drawer on the right](docs/shots/1440-import2.png)
+
+The filing moment (the questions memory already answers fly into the drawer, about 1.2 s): [docs/filing-moment.gif](docs/filing-moment.gif). More screens, in light and dark at 1440 and 375 px, are in [docs/shots](docs/shots). The design plan is [docs/design-plan.md](docs/design-plan.md) and the critique with checks is [docs/design-critique.md](docs/design-critique.md).
+
 ## How it uses Tatum
 
 All chain data comes through **Tatum's Sui GraphQL gateway** (`sui-mainnet.gateway.tatum.io/graphql`).
@@ -73,10 +79,11 @@ With keys, `BASE_URL=http://localhost:3000 npx tsx scripts/acceptance-m3.ts` run
 ## What went wrong
 
 - **JSON-RPC was retired.** The first history call (`suix_queryTransactionBlocks`) failed; everything moved to GraphQL, which has different filters, retention limits and a "below earliest checkpoint" error for sparse filters.
-- **`remember()` returns before the memory is searchable.** It returns `{ job_id, status }`, and the memory is only recallable after the job finishes, 15–23 s later (about 2 s more until recall sees it). Our first script checked `res.jobId` (wrong name) and never waited. The app now polls the job.
-- **`listMemories()` has no text,** so the "exhaustive" cross-check can only compare counts and blob ids, not content.
-- **Delegate keys cannot be scoped.** The second app that was meant to be read-only could write a memory (tested).
+- **`remember()` returns before the memory is searchable.** It returns `{ job_id, status }`, and the memory is only recallable after the job finishes, 15–23 s later (about 2 s more until recall sees it). Our first script checked `res.jobId` (wrong name) and never waited. The app now polls the job. This is already tracked upstream ([#303](https://github.com/MystenLabs/walrus-memory/issues/303), [#277](https://github.com/MystenLabs/walrus-memory/issues/277)).
+- **`listMemories()` has no text,** so the "exhaustive" cross-check can only compare counts and blob ids, not content. Filed: [MystenLabs/walrus-memory#1385](https://github.com/MystenLabs/walrus-memory/issues/1385).
+- **Delegate keys cannot be scoped.** The second app that was meant to be read-only could write a memory (tested). Filed: [MystenLabs/walrus-memory#1384](https://github.com/MystenLabs/walrus-memory/issues/1384).
 - **Writes are slow** (15–23 s alone, up to ~33 s with several in flight), which forced the non-blocking save design.
+- **`health()` passes with a key the relayer rejects.** A valid-looking key that is not registered on the account only fails at the first write, with a generic 401. Already tracked upstream ([#1125](https://github.com/MystenLabs/walrus-memory/issues/1125), [#1139](https://github.com/MystenLabs/walrus-memory/issues/1139)).
 - **Most wallets that trade on a DEX are bots.** Finding a human-looking wallet with swaps and LP took several attempts: the busiest Cetus LP and aggregator senders were rebalancing or arbitrage bots with hundreds of identical calls. The demo wallet has 47 transactions.
 - **Framework calls hid the real action.** Using the first call of a transaction as the question key produced questions about `0x2::coin` and `0x3::staking_pool`. Framework (`0x1`/`0x2`/`0x3`) calls are now treated as plumbing.
 - **Auto-compounds looked like deposits.** Collect fees, swap and re-add liquidity in one transaction was labelled `lp_add` for a few cents of change; it is now its own `lp_compound` label.
