@@ -6,6 +6,7 @@ import { getHistory, inRange, emptyMessage } from "./history";
 import { countQuestions, latestOutcome } from "./learning";
 import { recallRules, writesAllowed, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
+import { USD_BASIS } from "./price";
 
 export { UserError };
 
@@ -47,6 +48,16 @@ export async function runImport(body: any) {
   }));
   const on = countQuestions(onQs, ruleKeys), off = countQuestions(withoutQs, ruleKeys);
   const last = latestOutcome(rs.outcomes, address);
+  // Approximate USD value of the SUI legs in this import (other coins are not valued).
+  const rows = toRows(txs, address, rs.rules).filter((r) => r.usd_value !== "");
+  const usdNum = (r: { usd_value: string }) => Number(r.usd_value);
+  const usd = {
+    basis: USD_BASIS, priced: rows.length, of: txs.length,
+    received: +rows.filter((r) => usdNum(r) > 0).reduce((s, r) => s + usdNum(r), 0).toFixed(2),
+    sent: +rows.filter((r) => usdNum(r) < 0).reduce((s, r) => s + usdNum(r), 0).toFixed(2),
+    top: [...rows].sort((a, b) => Math.abs(usdNum(b)) - Math.abs(usdNum(a))).slice(0, 5)
+      .map((r) => ({ date: r.date.slice(0, 10), digest: r.digest, label: r.label, price: r.sui_usd_price, usd: r.usd_value })),
+  };
   return {
     address, namespace, from, to, txCount: txs.length, source: hist.source, cachedAt: hist.cachedAt, note: hist.note,
     memory, labelCounts, questions, counts: { on, off },
@@ -54,6 +65,7 @@ export async function runImport(body: any) {
     reused: off.repeat,
     previousOutcome: last ? { range: last.range, txs: last.txs, asked: last.asked, answered: last.answered, reused: last.reused, blob: last.blob } : null,
     updates: rs.updates,
+    usd,
     writes: writesAllowed(),
     memoryStats: { rules: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, recalled: rs.recalled, incomplete: rs.incomplete },
   };

@@ -10,6 +10,7 @@ type ImportResult = {
   labelCounts: Record<string, number>; questions: Question[]; counts: { on: Counts; off: Counts }; reused: number;
   previousOutcome: { range: string; asked: number; answered: number; blob: string } | null;
   updates: { match: string; from: string; to: string }[];
+  usd: { basis: string; priced: number; of: number; received: number; sent: number; top: { date: string; digest: string; label: string; price: string; usd: string }[] };
   writes: { ok: boolean; reason?: string };
   memoryStats: { rules: number; outcomes: number; listed: number; incomplete: boolean };
 };
@@ -188,6 +189,20 @@ export default function Home() {
               </tbody>
             </table>
           </div>
+          {res.usd.priced > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <b>USD value of SUI legs</b> <small>(approximate, on-chain pool price)</small>: received <b>${res.usd.received.toLocaleString("en-US")}</b>, sent <b>${Math.abs(res.usd.sent).toLocaleString("en-US")}</b>
+              {" "}across {res.usd.priced} of {res.usd.of} transactions. Other coins (e.g. CETUS) are not valued.
+              <div className="tblwrap">
+                <table style={{ fontSize: 13, marginTop: 4 }}>
+                  <thead><tr><th style={th}>Date</th><th style={th}>Label</th><th style={th}>SUI price</th><th style={th}>USD</th></tr></thead>
+                  <tbody>{res.usd.top.map((r) => (
+                    <tr key={r.digest}><td style={th}><a href={`https://suiscan.xyz/mainnet/tx/${r.digest}`} target="_blank" rel="noreferrer">{day(r.date)}</a></td><td style={th}>{r.label}</td><td style={th}>${r.price}</td><td style={th}>{Number(r.usd) < 0 ? "-" : ""}${Math.abs(Number(r.usd)).toLocaleString("en-US")}</td></tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
           <div style={{ fontSize: 13, color: "#555" }}>Showing the questions for memory {res.memory ? "ON" : "OFF"}. Memory holds {res.memoryStats.listed} memories ({res.memoryStats.rules} rules, {res.memoryStats.outcomes} import outcomes).</div>
           {incomplete && <p style={{ color: "#b60" }} role="alert">Memory returned fewer items than it holds, so some saved answers may be missing. Saving is paused: run the import again before answering.</p>}
           {outcome && <div style={{ fontSize: 13 }}>Import outcome: {outcome.state === "saving" ? "saving… (about 20 s)" : outcome.state === "saved" ? <>saved, {blobLink(outcome.blob)}</> : "not saved"}</div>}

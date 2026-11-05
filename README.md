@@ -1,16 +1,88 @@
 # LedgerKeeper
 
-Labelling for your accountant, not tax advice. Answer each unclear Sui transaction question once; your answers are saved as rules in your Walrus Memory and reused on every later import.
+**Labelled Sui records for your accountant. You answer each unclear transaction once; your answers live in your own Walrus Memory and are reused on every later import and by any other app you allow.**
 
-Not affiliated with Ledger SAS.
+Live demo: https://ledgerkeeper.vercel.app · Code: https://github.com/AjKadri/ledgerkeeper · Built for Total Recall (Consumer Finance Apps).
 
-## Test
+> Labelling for your accountant, not tax advice. History from 23 Jan 2026 only. Not affiliated with Ledger SAS.
+
+## 60-second walkthrough
+
+The demo uses a real public wallet with a fictional owner ("Sam"): Cetus swaps and liquidity, 47 transactions.
+
+1. Open the live URL and click **Import 1: up to 30 Jun**. 36 transactions are labelled (swap, LP add/remove/compound, rewards, staking). Five questions remain, grouped by counterparty or contract ("2 transfers with 0x6095…: who is this?").
+2. Answer each one (My own wallet / An exchange / A person or business / Ignore, or Swap / LP / Reward claim / Payment for contracts). Each answer is saved as a rule in Walrus Memory. The page shows "saving…" (about 20 s) and then a link to the stored blob.
+3. When all are answered, an **import outcome** memory is saved too.
+4. Click **Import 2: Jul–Aug**. The headline reads **Repeat questions: 0 with memory / 2 without**, with 3 genuinely new questions, and a line from the outcome memory: "Last time you answered 5 of 5 questions. This time: 3 new questions, 2 reused from memory." The table shows memory ON and OFF side by side for the same import.
+5. Change one saved answer under **Your saved rules**. The newest answer wins and the next import says "updated from A to B".
+6. Open the **Accountant view**. It is a separate app using a separate delegate key, it asks nothing, and it produces the same CSV as the main app (byte for byte; the acceptance script diffs them).
+
+You can also paste any Sui address (read-only, live through Tatum).
+
+## How it uses Tatum
+
+All chain data comes through **Tatum's Sui GraphQL gateway** (`sui-mainnet.gateway.tatum.io/graphql`).
+
+- **History by address:** `transactions(filter: { affectedAddress })`, newest first in pages of 50, with balance changes, events and Move call commands. This is what gets classified.
+- **Why GraphQL and not JSON-RPC:** the Sui JSON-RPC query methods we first tried (`suix_queryTransactionBlocks`) are retired, so a per-address history is only available through GraphQL. See "What went wrong".
+- **Empty or old wallets:** a balance query tells "empty wallet" from "holds funds, but its activity is older than the available history".
+- **USD values:** the Cetus SUI/USDC pool object is read at a past checkpoint (`object(address, atCheckpoint)`), and `checkpoint(sequenceNumber)` is used to find the checkpoint nearest noon UTC each day.
+- **Limits we hit:** history starts 23 Jan 2026 (checkpoint 237661232); sparse filters need `afterCheckpoint` or they fail with "requested data below earliest"; the free plan rate-limits (429), so we retry with backoff and serve demo wallets from a server-side cache labelled "cached at 2026-11-05". If Tatum is down, a demo wallet falls back to that cache and says so.
+
+## How it uses Walrus Memory
+
+Mainnet, SDK `@mysten-incubation/memwal` 0.1.12. A fresh namespace per demo session.
+
+- **Rule memories:** one memory per answer, e.g. `[tax-rule] match=0x… kind=exchange v=2`. Counterparty answers store a *kind* (own, exchange, person) and the label follows the direction of each transaction, so one "exchange" answer labels deposits and withdrawals correctly. Contract answers store a fixed label (`label=swap`). The older `label=… v=1` form is still read.
+- **Outcome memories:** one per import, `[import] wallet=… range=… txs=… asked=… answered=… reused=… v=1`. The next import reads the newest outcome for the wallet and shows the learning ("last time you answered X; this time Y new, Z reused").
+- **Newest wins:** corrections are new memories. Rules are resolved by newest `created_at` (taken from `listMemories`, because recall results may lack it). Correcting back to an old label still works.
+- **Recall you can trust:** every recall is cross-checked against `listMemories`. If recall returns fewer memories than the namespace holds, it retries, then warns and pauses saving rather than silently asking again.
+- **Writes without blocking the page:** `remember()` returns a job id; the page polls the job for the blob id. An idempotency key (namespace + answer id + text) means a double click or retry makes one memory, while a deliberate correction is a new one.
+- **App B:** the Accountant view uses delegate key B only; the main app uses key A. Both are registered in the account's `delegate_keys` on chain.
+- **Kill switch:** `MEMORY_WRITES_ENABLED=false` puts the app in read-only mode: saved rules still apply and the CSV export still works.
+
+## CSV export
+
+Columns: `date, digest, label, assets_in, assets_out, counterparty, rule_used, suiscan, sui_usd_price, usd_value, usd_basis`. `rule_used` is the rule that decided the label, or "built-in".
+
+**USD values** cover SUI legs only (net SUI change of the wallet at the transaction time) and are *approximate, on-chain pool price*. Other coins (for example CETUS) are left blank. How it is computed: a daily table (`data/sui-usd.json`, 286 days, 24 Jan to 5 Nov 2026) holds the price of the Cetus SUI/USDC pool at the checkpoint nearest 12:00 UTC, read through Tatum GraphQL; a transaction is priced by interpolating between the two anchors around its time. Hand-check of three demo transactions against CoinGecko's public price (`scripts/price-check.ts`): 28 Apr, 30 May and 24 Aug 2026 were -1.74%, -0.29% and -2.80% off CoinGecko's daily (00:00 UTC) price, and +0.08%, -1.45% and +0.51% off its nearest hourly point, so all within 3%. A pool price is not a market-wide quote, and thin or volatile moments can differ more.
+
+## Run and test locally
 
 ```bash
 npm install
-npm test
+npm test            # replays recorded transaction fixtures; no keys needed
+cp .env.example .env.local   # then fill in your own Tatum key and Walrus Memory account and delegate keys
+npm run dev
 ```
 
-Tests replay recorded transaction fixtures in `fixtures/` and need no keys.
+`npm test` covers the classifier on three recorded wallets (4, 10 and 8 questions), repeat/new counting, newest-wins, kind-based labels in both directions, retry and outage handling, and recall-incomplete detection (with a fake memory client).
 
-Licence: Apache-2.0.
+With keys, `BASE_URL=http://localhost:3000 npx tsx scripts/acceptance-m3.ts` runs the whole loop (import, answer, save, re-import, correction, A/B CSV diff, `listMemories` count) against real memory. `npx tsx scripts/build-prices.ts` rebuilds the daily price table; `npx tsx scripts/price-check.ts` compares it with CoinGecko.
+
+## Honest limits
+
+- **History from 23 Jan 2026 only** (Tatum's retention). Live imports read the newest 500 transactions of an address.
+- **Labels are right on what we checked, which is small:** a 20-row hand-check on one staking wallet (20/20) and all 32 swap/LP/claim rows of the demo wallet. Unknown protocols become questions rather than guesses. The NFT/kiosk wallet's swap and claim rows were reviewed, the rest were not.
+- **Demo memory belongs to the builder.** In the hosted demo, every session writes into the builder's Walrus Memory account (separate namespaces), and the default relayer sees the plaintext rules. Visitors do not bring their own account yet.
+- **App B is trusted, not enforced.** The SDK cannot scope delegate keys: we verified that the "accountant" key can write as well as read.
+- **Writes take 15–30 s**, so the UI is built around "saving…" and polling. The hourly write cap (default 20) is per server instance and best-effort.
+- **USD values are approximate** and SUI-only (see above). The price table has to be rebuilt for dates after its last day.
+- **Not tax advice:** no gains, losses, filing or country rules. It is a labelled export.
+
+## What went wrong
+
+- **JSON-RPC was retired.** The first history call (`suix_queryTransactionBlocks`) failed; everything moved to GraphQL, which has different filters, retention limits and a "below earliest checkpoint" error for sparse filters.
+- **`remember()` returns before the memory is searchable.** It returns `{ job_id, status }`, and the memory is only recallable after the job finishes, 15–23 s later (about 2 s more until recall sees it). Our first script checked `res.jobId` (wrong name) and never waited. The app now polls the job.
+- **`listMemories()` has no text,** so the "exhaustive" cross-check can only compare counts and blob ids, not content.
+- **Delegate keys cannot be scoped.** The second app that was meant to be read-only could write a memory (tested).
+- **Writes are slow** (15–23 s alone, up to ~33 s with several in flight), which forced the non-blocking save design.
+- **Most wallets that trade on a DEX are bots.** Finding a human-looking wallet with swaps and LP took several attempts: the busiest Cetus LP and aggregator senders were rebalancing or arbitrage bots with hundreds of identical calls. The demo wallet has 47 transactions.
+- **Framework calls hid the real action.** Using the first call of a transaction as the question key produced questions about `0x2::coin` and `0x3::staking_pool`. Framework (`0x1`/`0x2`/`0x3`) calls are now treated as plumbing.
+- **Auto-compounds looked like deposits.** Collect fees, swap and re-add liquidity in one transaction was labelled `lp_add` for a few cents of change; it is now its own `lp_compound` label.
+- **The answers asked the wrong thing (design flaw found in review).** The first version asked users to pick a *label* ("payment sent", "exchange deposit") for a counterparty, but one counterparty has transfers in both directions, so a single answer could be right for one and wrong for the other. Answers now describe who the counterparty is, and the label is derived from direction (rule format v2).
+- **A Tatum price endpoint answered with the wrong asset.** `rate/history` for symbol "SUI" returned a different token with the same symbol, with HTTP 200. Historical prices come from the on-chain pool instead.
+
+## Licence
+
+Apache-2.0. See `LICENSE`.
