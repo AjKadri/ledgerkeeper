@@ -10,3 +10,5 @@ BRIEF-*.md
 dist/
 *.log
 .DS_Store
+.vercel
+.env*

@@ -1,6 +1,6 @@
 // Rule memory on Walrus Memory: one memory per rule, text form `[tax-rule] match=… label=… v=1`.
 import { MemWal } from "@mysten-incubation/memwal";
-import type { Rule } from "./classify.ts";
+import type { Rule } from "./classify";
 
 export const ruleToText = (r: Rule) => `[tax-rule] match=${r.match} label=${r.label} v=1`;
 

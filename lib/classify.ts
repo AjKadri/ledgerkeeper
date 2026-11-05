@@ -1,5 +1,5 @@
 // Shared classifier used by step 2 and step 3 (works on the normalised Tx shape from gql.ts).
-import type { Tx } from "./gql.ts";
+import type { Tx } from "./gql";
 
 export type Rule = { match: string; label: string };
 export type Result = { digest: string; date: string; label: string; detail: string; questionKey?: string; direction?: "in" | "out" };

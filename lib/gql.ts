@@ -1,5 +1,4 @@
 // Tatum Sui GraphQL helper + one normalised transaction shape used by every script.
-import "dotenv/config";
 
 export const GQL = "https://sui-mainnet.gateway.tatum.io/graphql";
 
