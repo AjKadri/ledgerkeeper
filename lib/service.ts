@@ -1,12 +1,13 @@
 // Request-level logic shared by the routes.
 import { ADDRESS_RE, NAMESPACE_RE } from "./config";
+import { UserError } from "./errors";
 import { classify, questionsFrom, type Rule } from "./classify";
 import { getHistory, inRange, emptyMessage } from "./history";
 import { countQuestions, latestOutcome } from "./learning";
-import { recallRules, type App, type RuleSet } from "./rules";
+import { recallRules, writesAllowed, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
 
-export class UserError extends Error {}
+export { UserError };
 
 export function checkAddress(a: unknown): string {
   if (typeof a !== "string" || !ADDRESS_RE.test(a.trim())) throw new UserError("That is not a valid Sui address (expected 0x followed by 64 hex characters).");
@@ -53,6 +54,7 @@ export async function runImport(body: any) {
     reused: off.repeat,
     previousOutcome: last ? { range: last.range, txs: last.txs, asked: last.asked, answered: last.answered, reused: last.reused, blob: last.blob } : null,
     updates: rs.updates,
+    writes: writesAllowed(),
     memoryStats: { rules: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, recalled: rs.recalled, incomplete: rs.incomplete },
   };
 }
@@ -65,7 +67,7 @@ export async function runExport(app: App, body: { address: unknown; namespace: u
   const rows = toRows(hist.txs, address, rs.rules);
   return {
     csv: toCsv(rows), rows: rows.length, source: hist.source, cachedAt: hist.cachedAt,
-    rules: { count: rs.rules.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, updates: rs.updates, blobs: rs.blobs },
+    rules: { count: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, updates: rs.updates, blobs: rs.blobs },
     unknown: rows.filter((r) => r.label === "unknown").length,
   };
 }

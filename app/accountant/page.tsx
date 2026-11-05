@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { friendly } from "@/lib/answers";
 
 function View() {
   const p = useSearchParams();
@@ -23,13 +24,13 @@ function View() {
       {out && (
         <>
           <p>
-            Rules recalled: <b>{out.rules.count}</b> (memory holds {out.rules.listed}). Rows: {out.rows}. Still unknown: <b>{out.unknown}</b>.{" "}
+            Rules recalled: <b>{out.rules.count}</b> (plus {out.rules.outcomes} import outcome{out.rules.outcomes === 1 ? "" : "s"}). Memory holds {out.rules.listed} in total. Rows: {out.rows}. Still unknown: <b>{out.unknown}</b>.{" "}
             Data: {out.source === "cached" ? `cached at ${out.cachedAt}` : "live from Tatum"}.
           </p>
-          {out.rules.updates?.map((u: any) => <p key={u.match} style={{ color: "#070" }}>Rule {u.match.slice(0, 12)}… updated from {u.from} to {u.to}.</p>)}
+          {out.rules.updates?.map((u: any) => <p key={u.match} style={{ color: "#070" }}>Rule {u.match.slice(0, 12)}… updated from {friendly(u.from, u.match)} to {friendly(u.to, u.match)}.</p>)}
           {out.rules.incomplete && <p style={{ color: "#b60" }}>Recall returned fewer rules than memory holds. Reload before trusting this export.</p>}
           <p><a href={`/api/export?as=B&address=${address}&namespace=${ns}`}>Download CSV (app B)</a></p>
-          <pre style={{ overflow: "auto", fontSize: 12, background: "#f6f6f6", padding: 8, maxHeight: 320 }}>{lines.slice(0, 16).join("\n")}{lines.length > 16 ? `\n… ${lines.length - 16} more rows` : ""}</pre>
+          <pre style={{ overflow: "auto", maxWidth: "100%", fontSize: 12, background: "#f6f6f6", padding: 8, maxHeight: 320 }}>{lines.slice(0, 16).join("\n")}{lines.length > 16 ? `\n… ${lines.length - 16} more rows` : ""}</pre>
         </>
       )}
     </main>

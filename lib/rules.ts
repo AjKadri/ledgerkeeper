@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { MemWal } from "@mysten-incubation/memwal";
 import type { Rule } from "./classify";
 import { memoryClient, ruleFromText, ruleToText, outcomeFromText, outcomeToText, listAll, type Outcome } from "./memory";
+import { UserError } from "./errors";
 import { resolveRules, type Parsed, type Resolved, type StoredOutcome } from "./learning";
 
 export type App = "A" | "B";
@@ -22,8 +23,10 @@ export type RuleSet = Resolved & {
 
 const QUERIES = ["tax-rule match label", "[import] wallet range txs asked answered reused"];
 
-export async function recallRules(app: App, namespace: string): Promise<RuleSet> {
-  const mem = client(app, namespace);
+export type RecallOpts = { mem?: Pick<MemWal, "recall" | "listMemories">; retryDelayMs?: number };
+
+export async function recallRules(app: App, namespace: string, opts: RecallOpts = {}): Promise<RuleSet> {
+  const mem = (opts.mem ?? client(app, namespace)) as MemWal;
   const listed = await listAll(mem, namespace);
   const created = new Map<string, string>(listed.map((m: any) => [m.blob_id, m.created_at]));
   let items: any[] = [];
@@ -33,7 +36,7 @@ export async function recallRules(app: App, namespace: string): Promise<RuleSet>
     for (const r of res) for (const x of r.results) byBlob.set(x.blob_id, x);
     items = [...byBlob.values()];
     if (items.length >= listed.length) break;
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, opts.retryDelayMs ?? 1500));
   }
   const at = (x: any) => created.get(x.blob_id) ?? x.created_at ?? "";
   const parsed = items.map((x) => ({ rule: ruleFromText(x.text), blob: x.blob_id as string, at: at(x) })).filter((x) => x.rule) as Parsed[];
@@ -61,7 +64,7 @@ export function writesAllowed(): { ok: boolean; reason?: string } {
 
 async function write(namespace: string, text: string, actionId: string) {
   const gate = writesAllowed();
-  if (!gate.ok) throw new Error(gate.reason);
+  if (!gate.ok) throw new UserError(gate.reason);
   // Same action id + same text => same key, so a double click or retry cannot create two memories.
   // A new action id (a correction, even back to an old label) is a new memory and wins by created_at.
   const idempotencyKey = createHash("sha256").update(`${namespace}|${actionId}|${text}`).digest("hex").slice(0, 40);

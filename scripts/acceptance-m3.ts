@@ -28,12 +28,13 @@ async function waitJob(jobId: string) {
 }
 async function answerAll(qs: any[], pickLabel: (q: any) => string) {
   const jobs = [];
-  for (const q of qs) jobs.push((await api("/api/answer", { namespace: ns, match: q.key, label: pickLabel(q), answerId: id() })).j.jobId);
+  for (const q of qs) jobs.push((await api("/api/answer", { namespace: ns, match: q.key, value: pickLabel(q), answerId: id() })).j.jobId);
   for (const j of jobs) await waitJob(j);
 }
 const outcome = async (i: any, answered: number, range: string) =>
   waitJob((await api("/api/outcome", { namespace: ns, address: i.address, range, txs: i.txCount, asked: i.counts.on.asked, answered, reused: i.reused, outcomeId: id() })).j.jobId);
-const lab = (q: any) => (!q.key.startsWith("0x") || q.key.includes("::") ? "ignore" : (q.samples[0]?.detail ?? "").includes("transfer out") ? "payment_sent" : "payment_received");
+// Counterparty questions describe who it is; contract questions are ignored in this demo run.
+const lab = (q: any) => (!q.key.startsWith("0x") || q.key.includes("::") ? "label:ignore" : "kind:person");
 
 log("target", BASE, "namespace", ns);
 
@@ -61,9 +62,9 @@ const ob2 = await outcome(i2, i2.questions.length, "2026-07-01..2026-08-31"); lo
 
 log("== correction");
 const target = i1.questions.find((q: any) => q.key.startsWith("0x") && !q.key.includes("::"))!;
-const oldLabel = lab(target), newLabel = oldLabel === "payment_sent" ? "exchange_deposit" : "exchange_withdrawal";
+const oldLabel = "kind:person", newLabel = "kind:exchange";
 const t0 = Date.now();
-await waitJob((await api("/api/answer", { namespace: ns, match: target.key, label: newLabel, answerId: id() })).j.jobId);
+await waitJob((await api("/api/answer", { namespace: ns, match: target.key, value: newLabel, answerId: id() })).j.jobId);
 log(`  corrected ${target.key.slice(0, 14)}… ${oldLabel} -> ${newLabel} (saved in ${((Date.now() - t0) / 1000).toFixed(0)}s)`);
 await sleep(3000);
 const i3 = await imp({});
@@ -73,7 +74,7 @@ check(`"updated from ${oldLabel} to ${newLabel}" reported`, upd?.from === oldLab
 const csvA = (await api(`/api/export?as=A&address=${W3}&namespace=${ns}`)).text;
 const csvB = (await api(`/api/export?as=B&address=${W3}&namespace=${ns}`)).text;
 const row = csvA.split("\n").find((l) => l.includes(`rule: ${target.key.slice(0, 20)}`));
-check("next import/export uses the new label", !!row && row.split(",")[2] === newLabel);
+check("next import/export uses the new label (exchange, by direction)", !!row && /^exchange_(deposit|withdrawal)$/.test(row.split(",")[2]));
 log(`  CSV row: ${row?.slice(0, 120)}`);
 check("app B CSV equals app A CSV after the correction", csvA === csvB);
 

@@ -3,6 +3,8 @@ import type { Rule } from "./classify";
 import type { Outcome } from "./memory";
 
 export type Q = { key: string };
+// "kind:exchange" or "label:swap": the comparable value of a rule.
+export const ruleValue = (r: Rule) => (r.kind ? `kind:${r.kind}` : `label:${r.label}`);
 export type Counts = { asked: number; repeat: number; new: number };
 
 // A "repeat" question is one whose answer already exists in memory; "new" is an address/package never answered.
@@ -27,8 +29,9 @@ export function resolveRules(parsed: Parsed[]): Resolved {
   for (const p of sorted) {
     const m = p.rule.match.toLowerCase();
     const labels = seen.get(m) ?? [];
-    if (!seen.has(m)) { rules.push({ match: m, label: p.rule.label }); blobs[m] = p.blob; }
-    if (!labels.includes(p.rule.label)) labels.push(p.rule.label);
+    const v = ruleValue(p.rule);
+    if (!seen.has(m)) { rules.push({ ...p.rule, match: m }); blobs[m] = p.blob; }
+    if (!labels.includes(v)) labels.push(v);
     seen.set(m, labels);
   }
   const conflicts = [...seen].filter(([, l]) => l.length > 1).map(([match, labels]) => ({ match, labels }));

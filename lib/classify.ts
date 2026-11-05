@@ -1,7 +1,20 @@
 // Shared classifier used by step 2 and step 3 (works on the normalised Tx shape from gql.ts).
 import type { Tx } from "./gql";
 
-export type Rule = { match: string; label: string };
+// An answer about a counterparty is a `kind` (the label then depends on direction);
+// an answer about a contract is a fixed `label`. v1 rules only have a label.
+export type Kind = "own" | "exchange" | "person";
+export type Rule = { match: string; label?: string; kind?: Kind };
+
+// kind + direction -> label. One "exchange" answer labels both an out transfer (deposit) and an in transfer (withdrawal).
+export function labelFor(r: Rule, dir: "in" | "out"): string {
+  switch (r.kind) {
+    case "own": return "own_wallet_transfer";
+    case "exchange": return dir === "out" ? "exchange_deposit" : "exchange_withdrawal";
+    case "person": return dir === "out" ? "payment_sent" : "payment_received";
+    default: return r.label ?? "unknown";
+  }
+}
 export type Result = { digest: string; date: string; label: string; detail: string; questionKey?: string; direction?: "in" | "out" };
 
 const norm = (a: string | null) => (a ?? "").toLowerCase();
@@ -12,7 +25,7 @@ const shortPkg = (s: string) => s.replace(/0x0+([0-9a-f]+)(?=::)/gi, "0x$1");
 const isPlumbing = (call: string) => /^0x[123]::/.test(call);
 
 // Direction from the sign of the wallet's own largest balance change.
-function direction(t: Tx, wallet: string): "in" | "out" {
+export function direction(t: Tx, wallet: string): "in" | "out" {
   const w = norm(wallet);
   let best = 0n;
   for (const b of t.balanceChanges) if (norm(b.owner) === w) { const v = BigInt(b.amount); if (v < 0n ? -v > (best < 0n ? -best : best) : v > (best < 0n ? -best : best)) best = v; }
@@ -35,7 +48,7 @@ export function classify(t: Tx, wallet: string, rules: Rule[] = []): Result {
   // 1. User rules first: an answer given once applies everywhere.
   for (const r of rules) {
     const m = r.match.toLowerCase();
-    if (callStr.includes(m) || cps.includes(m)) return { ...base, label: r.label, detail: `rule: ${r.match}` };
+    if (callStr.includes(m) || cps.includes(m)) return { ...base, label: labelFor(r, direction(t, wallet)), detail: `rule: ${r.match}` };
   }
 
   // 2. Built-in patterns (staking first, then the generic ones)
@@ -58,19 +71,27 @@ export function classify(t: Tx, wallet: string, rules: Rule[] = []): Result {
     return { ...base, label: "unknown", detail: `no counterparties (${dir})`, questionKey: "other", direction: dir };
   }
   const pm = meaningful[0].split("::").slice(0, 2).join("::"); // package::module
-  return { ...base, label: "unknown", detail: meaningful[0], questionKey: pm };
+  return { ...base, label: "unknown", detail: meaningful[0], questionKey: pm, direction: direction(t, wallet) };
 }
 
 export function questionsFrom(results: Result[]) {
-  const groups = new Map<string, number>();
-  for (const r of results) if (r.questionKey) groups.set(r.questionKey, (groups.get(r.questionKey) ?? 0) + 1);
+  type G = { count: number; in: number; out: number; first: string; last: string };
+  const groups = new Map<string, G>();
+  for (const r of results) {
+    if (!r.questionKey) continue;
+    const g = groups.get(r.questionKey) ?? { count: 0, in: 0, out: 0, first: r.date, last: r.date };
+    g.count++; if (r.direction === "in") g.in++; else if (r.direction === "out") g.out++;
+    if (r.date < g.first) g.first = r.date; if (r.date > g.last) g.last = r.date;
+    groups.set(r.questionKey, g);
+  }
   return [...groups.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([key, count]) => ({
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([key, g]) => ({
       key,
-      count,
+      count: g.count,
+      in: g.in, out: g.out, first: g.first, last: g.last,
       question: key.startsWith("0x") && !key.includes("::")
-        ? `${count} transfers with ${key}: is this your own wallet, a person, or an exchange?`
-        : `${count} calls to ${key}: what is this (swap, LP, staking, payment, other)?`,
+        ? `${g.count} transfer${g.count === 1 ? "" : "s"} with ${key}: who is this?`
+        : `${g.count} call${g.count === 1 ? "" : "s"} to ${key}: what do they do?`,
     }));
 }

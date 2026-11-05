@@ -55,7 +55,7 @@ test("wallet1: the four spike answers remove every question", () => {
 
 test("rule text round-trips", () => {
   const r = { match: "0xabc", label: "swap" };
-  assert.match(ruleToText(r), /v=1$/);
+  assert.match(ruleToText(r), /v=2$/);
   assert.deepEqual(ruleFromText(ruleToText(r)), r);
 });
 
@@ -87,7 +87,7 @@ test("newest created_at wins and the change is reported", () => {
   ]);
   assert.deepEqual(r.rules.find((x) => x.match === "0xa"), { match: "0xa", label: "exchange_deposit" });
   assert.equal(r.blobs["0xa"], "b2");
-  assert.deepEqual(r.updates, [{ match: "0xa", from: "payment_sent", to: "exchange_deposit" }]);
+  assert.deepEqual(r.updates, [{ match: "0xa", from: "label:payment_sent", to: "label:exchange_deposit" }]);
   assert.equal(r.rules.length, 2);
 });
 
@@ -118,4 +118,44 @@ test("outcome text round-trips and the latest outcome for a wallet is picked", (
   assert.match(outcomeToText(o), /v=1$/);
   const last = latestOutcome([{ ...o, blob: "x", at: "1" }, { ...o, asked: 3, blob: "y", at: "2" }, { ...o, wallet: "0xz", blob: "z", at: "3" }], "0xW");
   assert.equal(last?.blob, "y");
+});
+
+import { ruleFromValue, optionsFor, friendly } from "../lib/answers.ts";
+
+test("v2 kind rules round-trip and v1 label rules are still read", () => {
+  assert.deepEqual(ruleFromText(ruleToText({ match: "0xabc", kind: "exchange" })), { match: "0xabc", kind: "exchange" });
+  assert.equal(ruleToText({ match: "0xabc", kind: "exchange" }), "[tax-rule] match=0xabc kind=exchange v=2");
+  assert.deepEqual(ruleFromText("[tax-rule] match=0xabc label=swap v=1"), { match: "0xabc", label: "swap" });
+  assert.equal(ruleFromText("[tax-rule] match=0xabc kind=wizard v=2"), null);
+});
+
+test("one 'exchange' answer labels both an in and an out transfer correctly", () => {
+  const f = load("wallet1");
+  const cp = "0xc94cf14976d6afe1bd9b9a0e4687a6fe20bc77128acdf89871eaa71aae350966"; // transfers both ways with the wallet
+  const rules: Rule[] = [{ match: cp, kind: "exchange" }];
+  const hits = f.txs.map((t: any) => ({ t, r: classify(t, f.wallet, rules) })).filter((x: any) => x.r.detail === `rule: ${cp}`);
+  const sign = (t: any) => { const mine = t.balanceChanges.filter((b: any) => b.owner === f.wallet).reduce((s: bigint, b: any) => s + BigInt(b.amount), 0n); return mine < 0n ? "out" : "in"; };
+  const outs = hits.filter((x: any) => sign(x.t) === "out"), ins = hits.filter((x: any) => sign(x.t) === "in");
+  assert.ok(outs.length > 0 && ins.length > 0, "fixture has both directions");
+  assert.ok(outs.every((x: any) => x.r.label === "exchange_deposit"));
+  assert.ok(ins.every((x: any) => x.r.label === "exchange_withdrawal"));
+});
+
+test("person and own kinds follow direction / ignore it", () => {
+  const f = load("wallet1");
+  const cp = "0xc94cf14976d6afe1bd9b9a0e4687a6fe20bc77128acdf89871eaa71aae350966";
+  const person = f.txs.map((t: any) => classify(t, f.wallet, [{ match: cp, kind: "person" }])).filter((r: any) => r.detail === `rule: ${cp}`);
+  assert.deepEqual([...new Set(person.map((r: any) => r.label))].sort(), ["payment_received", "payment_sent"]);
+  const own = f.txs.map((t: any) => classify(t, f.wallet, [{ match: cp, kind: "own" }])).filter((r: any) => r.detail === `rule: ${cp}`);
+  assert.deepEqual([...new Set(own.map((r: any) => r.label))], ["own_wallet_transfer"]);
+});
+
+test("answer options: transfers describe the counterparty, contracts what they do", () => {
+  assert.deepEqual(optionsFor("0xabc").map((o) => o.text), ["My own wallet", "An exchange", "A person or business", "Ignore"]);
+  assert.deepEqual(optionsFor("0x1::mod").map((o) => o.text), ["Swap", "Add liquidity (LP)", "Remove liquidity (LP)", "Reward or fee claim", "Payment", "Ignore"]);
+  assert.deepEqual(ruleFromValue("0xabc", "kind:exchange"), { match: "0xabc", kind: "exchange" });
+  assert.deepEqual(ruleFromValue("0xabc", "label:swap"), { match: "0xabc", label: "swap" });
+  assert.equal(ruleFromValue("0xabc", "kind:nope"), null);
+  assert.equal(friendly("kind:person", "0x1::mod"), "Payment");
+  assert.equal(friendly("kind:person", "0xabc"), "A person or business");
 });

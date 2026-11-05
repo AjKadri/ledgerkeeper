@@ -25,7 +25,8 @@ export async function getHistory(address: string, opts: { forceCache?: boolean }
     return { txs, source: "live", truncated, note: truncated ? `Showing the newest ${txs.length} transactions only.` : undefined };
   } catch (e) {
     if (cached) return { txs: cached, source: "cached", cachedAt: CACHED_AT, note: "Tatum unavailable, showing cached data" };
-    throw new Error(`Could not read history from Tatum: ${(e as Error).message.slice(0, 200)}`);
+    console.error("tatum error:", (e as Error).message.slice(0, 200));
+    throw new Error("Tatum did not respond (could not read this address's history). Please try again in a minute.");
   }
 }
 

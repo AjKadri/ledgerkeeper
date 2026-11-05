@@ -17,7 +17,7 @@ export async function gql(query: string, variables: Record<string, unknown> = {}
 
     const retryable = res.status === 429 || res.status >= 500 || !json || json.data == null && !json.errors;
     if (retryable && i < tries) {
-      const wait = 1500 * 2 ** (i - 1);
+      const wait = Number(process.env.GQL_RETRY_BASE_MS ?? 1500) * 2 ** (i - 1);
       process.stdout.write(` [HTTP ${res.status}, retry in ${wait / 1000}s]`);
       await sleep(wait);
       continue;
@@ -25,7 +25,7 @@ export async function gql(query: string, variables: Record<string, unknown> = {}
     if (!json) throw new Error(`HTTP ${res.status}, not JSON: ${text.slice(0, 500)}`);
     if (json.errors?.length) throw new Error(`GraphQL: ${JSON.stringify(json.errors).slice(0, 800)}`);
     if (json.data == null) throw new Error(`HTTP ${res.status}, no data: ${text.slice(0, 500)}`);
-    await sleep(250); // stay polite to the free-plan rate limit
+    await sleep(process.env.GQL_RETRY_BASE_MS ? Math.min(250, Number(process.env.GQL_RETRY_BASE_MS)) : 250); // stay polite to the free-plan rate limit
     return json.data;
   }
 }

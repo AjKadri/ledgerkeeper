@@ -2,11 +2,15 @@
 import { MemWal } from "@mysten-incubation/memwal";
 import type { Rule } from "./classify";
 
-export const ruleToText = (r: Rule) => `[tax-rule] match=${r.match} label=${r.label} v=1`;
+// v2 stores either `kind=` (counterparty answers) or `label=` (contract answers). v1 (`label=… v=1`) is still read.
+export const ruleToText = (r: Rule) =>
+  r.kind ? `[tax-rule] match=${r.match} kind=${r.kind} v=2` : `[tax-rule] match=${r.match} label=${r.label} v=2`;
 
 export function ruleFromText(s: string): Rule | null {
-  const m = s.match(/\[tax-rule\] match=(\S+) label=(\S+)/);
-  return m ? { match: m[1], label: m[2] } : null;
+  const m = s.match(/\[tax-rule\] match=(\S+) (label|kind)=(\S+)/);
+  if (!m) return null;
+  if (m[2] === "kind") return ["own", "exchange", "person"].includes(m[3]) ? { match: m[1], kind: m[3] as Rule["kind"] } : null;
+  return { match: m[1], label: m[3] };
 }
 
 export type MemoryConfig = { key: string; accountId: string; serverUrl?: string; namespace: string };
