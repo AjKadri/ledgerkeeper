@@ -12,6 +12,8 @@ export async function POST(req: Request) {
     if (!/^0x[0-9a-fA-F]{1,64}(::[A-Za-z0-9_]+)?$/.test(match)) throw new UserError("Invalid match.");
     if (!(ANSWER_LABELS as readonly string[]).includes(b.label)) throw new UserError("Invalid label.");
     // Returns as soon as the relayer accepts the job; the page polls /api/job for the blob id (~20 s).
-    return NextResponse.json(await saveRule(namespace, { match: match.toLowerCase(), label: b.label }));
+    const actionId = String(b.answerId ?? "");
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(actionId)) throw new UserError("Missing answer id.");
+    return NextResponse.json(await saveRule(namespace, { match: match.toLowerCase(), label: b.label }, actionId));
   } catch (e) { return fail(e); }
 }

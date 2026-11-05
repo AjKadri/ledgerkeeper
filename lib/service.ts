@@ -1,7 +1,8 @@
 // Request-level logic shared by the routes.
 import { ADDRESS_RE, NAMESPACE_RE } from "./config";
 import { classify, questionsFrom, type Rule } from "./classify";
-import { getHistory, inRange, EMPTY_MESSAGE } from "./history";
+import { getHistory, inRange, emptyMessage } from "./history";
+import { countQuestions, latestOutcome } from "./learning";
 import { recallRules, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
 
@@ -25,24 +26,34 @@ export async function runImport(body: any) {
 
   const hist = await getHistory(address);
   const txs = inRange(hist.txs, from, to);
-  if (!txs.length) throw new UserError(hist.txs.length ? "No transactions in that date range." : EMPTY_MESSAGE);
+  if (!txs.length) throw new UserError(hist.txs.length ? "No transactions in that date range." : await emptyMessage(address));
 
-  const without = txs.map((t) => classify(t, address));
-  let rs: RuleSet | null = null;
-  if (memory) rs = await recallRules("A", namespace);
-  const results = txs.map((t) => classify(t, address, rs?.rules ?? []));
+  // Always recall, so both columns (memory ON / OFF) can be shown for the same import.
+  const rs = await recallRules("A", namespace);
+  const ruleKeys = new Set(rs.rules.map((r) => r.match.toLowerCase()));
+  const withoutQs = questionsFrom(txs.map((t) => classify(t, address)));
+  const resultsOn = txs.map((t) => classify(t, address, rs.rules));
+  const onQs = questionsFrom(resultsOn);
+  const results = memory ? resultsOn : txs.map((t) => classify(t, address));
 
   const labelCounts: Record<string, number> = {};
   for (const r of results) labelCounts[r.label] = (labelCounts[r.label] ?? 0) + 1;
-  const questions = questionsFrom(results).map((q) => ({
+  const shown = memory ? onQs : withoutQs;
+  const questions = shown.map((q) => ({
     ...q,
+    repeat: ruleKeys.has(q.key.toLowerCase()),
     samples: results.filter((r) => r.questionKey === q.key).slice(0, 3).map((r) => ({ digest: r.digest, date: r.date, detail: r.detail })),
   }));
+  const on = countQuestions(onQs, ruleKeys), off = countQuestions(withoutQs, ruleKeys);
+  const last = latestOutcome(rs.outcomes, address);
   return {
     address, namespace, from, to, txCount: txs.length, source: hist.source, cachedAt: hist.cachedAt, note: hist.note,
-    memory, labelCounts, questions,
-    questionsWithoutMemory: questionsFrom(without).length,
-    rulesRecalled: rs ? { count: rs.rules.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts } : null,
+    memory, labelCounts, questions, counts: { on, off },
+    // "reused" = repeat questions memory answered for us in this import
+    reused: off.repeat,
+    previousOutcome: last ? { range: last.range, txs: last.txs, asked: last.asked, answered: last.answered, reused: last.reused, blob: last.blob } : null,
+    updates: rs.updates,
+    memoryStats: { rules: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, recalled: rs.recalled, incomplete: rs.incomplete },
   };
 }
 
@@ -54,7 +65,7 @@ export async function runExport(app: App, body: { address: unknown; namespace: u
   const rows = toRows(hist.txs, address, rs.rules);
   return {
     csv: toCsv(rows), rows: rows.length, source: hist.source, cachedAt: hist.cachedAt,
-    rules: { count: rs.rules.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, blobs: rs.blobs },
+    rules: { count: rs.rules.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, updates: rs.updates, blobs: rs.blobs },
     unknown: rows.filter((r) => r.label === "unknown").length,
   };
 }

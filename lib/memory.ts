@@ -33,3 +33,14 @@ export async function listAll(mem: MemWal, namespace: string) {
   }
   return all;
 }
+
+// --- outcome memories: one per import, read back on the next import ---
+export type Outcome = { wallet: string; range: string; txs: number; asked: number; answered: number; reused: number };
+
+export const outcomeToText = (o: Outcome) =>
+  `[import] wallet=${o.wallet} range=${o.range} txs=${o.txs} asked=${o.asked} answered=${o.answered} reused=${o.reused} v=1`;
+
+export function outcomeFromText(s: string): Outcome | null {
+  const m = s.match(/\[import\] wallet=(\S+) range=(\S+) txs=(\d+) asked=(\d+) answered=(\d+) reused=(\d+)/);
+  return m ? { wallet: m[1], range: m[2], txs: +m[3], asked: +m[4], answered: +m[5], reused: +m[6] } : null;
+}

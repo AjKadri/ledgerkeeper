@@ -2,7 +2,8 @@
 import { createHash } from "node:crypto";
 import type { MemWal } from "@mysten-incubation/memwal";
 import type { Rule } from "./classify";
-import { memoryClient, ruleFromText, ruleToText, listAll } from "./memory";
+import { memoryClient, ruleFromText, ruleToText, outcomeFromText, outcomeToText, listAll, type Outcome } from "./memory";
+import { resolveRules, type Parsed, type Resolved, type StoredOutcome } from "./learning";
 
 export type App = "A" | "B";
 
@@ -12,14 +13,14 @@ export function client(app: App, namespace: string): MemWal {
   return memoryClient({ key, accountId: process.env.MEMWAL_ACCOUNT_ID, serverUrl: process.env.MEMWAL_SERVER_URL, namespace });
 }
 
-export type RuleSet = {
-  rules: Rule[];                     // newest first, one per match
-  blobs: Record<string, string>;     // match -> blob id of the winning rule
-  recalled: number;
-  listed: number;
-  conflicts: { match: string; labels: string[] }[];
-  incomplete: boolean;               // recall returned fewer rules than listMemories counts
+export type RuleSet = Resolved & {
+  outcomes: StoredOutcome[];
+  recalled: number;                  // memories recalled (rules + outcomes)
+  listed: number;                    // memories listMemories counts in the namespace
+  incomplete: boolean;               // recall returned fewer memories than listMemories counts
 };
+
+const QUERIES = ["tax-rule match label", "[import] wallet range txs asked answered reused"];
 
 export async function recallRules(app: App, namespace: string): Promise<RuleSet> {
   const mem = client(app, namespace);
@@ -27,28 +28,23 @@ export async function recallRules(app: App, namespace: string): Promise<RuleSet>
   const created = new Map<string, string>(listed.map((m: any) => [m.blob_id, m.created_at]));
   let items: any[] = [];
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await mem.recall({ query: "tax-rule match label", limit: 100 });
-    items = res.results;
+    const res = await Promise.all(QUERIES.map((q) => mem.recall({ query: q, limit: 100 })));
+    const byBlob = new Map<string, any>();
+    for (const r of res) for (const x of r.results) byBlob.set(x.blob_id, x);
+    items = [...byBlob.values()];
     if (items.length >= listed.length) break;
     await new Promise((r) => setTimeout(r, 1500));
   }
-  const parsed = items
-    .map((x) => ({ rule: ruleFromText(x.text), blob: x.blob_id as string, at: created.get(x.blob_id) ?? x.created_at ?? "" }))
-    .filter((x) => x.rule) as { rule: Rule; blob: string; at: string }[];
-  parsed.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); // newest first
-  const seen = new Map<string, string[]>();
-  const rules: Rule[] = []; const blobs: Record<string, string> = {};
-  for (const p of parsed) {
-    const m = p.rule.match.toLowerCase();
-    const labels = seen.get(m) ?? [];
-    if (!labels.includes(p.rule.label)) labels.push(p.rule.label);
-    seen.set(m, labels);
-    if (labels.length === 1 && !blobs[m]) { rules.push(p.rule); blobs[m] = p.blob; }
-  }
+  const at = (x: any) => created.get(x.blob_id) ?? x.created_at ?? "";
+  const parsed = items.map((x) => ({ rule: ruleFromText(x.text), blob: x.blob_id as string, at: at(x) })).filter((x) => x.rule) as Parsed[];
+  const outcomes: StoredOutcome[] = items
+    .map((x) => ({ o: outcomeFromText(x.text), blob: x.blob_id as string, at: at(x) }))
+    .filter((x) => x.o)
+    .map((x) => ({ ...x.o!, blob: x.blob, at: x.at }));
   return {
-    rules, blobs, recalled: parsed.length, listed: listed.length,
-    conflicts: [...seen].filter(([, l]) => l.length > 1).map(([match, labels]) => ({ match, labels })),
-    incomplete: parsed.length < listed.length,
+    ...resolveRules(parsed), outcomes,
+    recalled: parsed.length + outcomes.length, listed: listed.length,
+    incomplete: parsed.length + outcomes.length < listed.length,
   };
 }
 
@@ -63,16 +59,18 @@ export function writesAllowed(): { ok: boolean; reason?: string } {
   return { ok: true };
 }
 
-export async function saveRule(namespace: string, rule: Rule) {
+async function write(namespace: string, text: string, actionId: string) {
   const gate = writesAllowed();
   if (!gate.ok) throw new Error(gate.reason);
-  const text = ruleToText(rule);
-  // Same namespace + same text => same key, so a double click or a retry cannot create two memories.
-  const idempotencyKey = createHash("sha256").update(`${namespace}|${text}`).digest("hex").slice(0, 40);
+  // Same action id + same text => same key, so a double click or retry cannot create two memories.
+  // A new action id (a correction, even back to an old label) is a new memory and wins by created_at.
+  const idempotencyKey = createHash("sha256").update(`${namespace}|${actionId}|${text}`).digest("hex").slice(0, 40);
   const res = await client("A", namespace).remember(text, { idempotencyKey });
   writeLog.push(Date.now());
   return { jobId: res.job_id, status: res.status };
 }
+export const saveRule = (namespace: string, rule: Rule, actionId: string) => write(namespace, ruleToText(rule), actionId);
+export const saveOutcome = (namespace: string, o: Outcome, actionId: string) => write(namespace, outcomeToText(o), actionId);
 
 export async function jobStatus(namespace: string, jobId: string) {
   return client("A", namespace).getRememberStatus(jobId);
