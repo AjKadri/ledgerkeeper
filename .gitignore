@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+BUILD-PLAN.md
+HANDOFF.md
+BRIEF-*.md
+.next/
+.vercel/
+dist/
+*.log
+.DS_Store
