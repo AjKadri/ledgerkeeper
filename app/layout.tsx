@@ -10,7 +10,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 export const metadata: Metadata = {
   title: `${APP_NAME}: labelled Sui records, answered once`,
   description: "Label your Sui history for your accountant. Answer each question once; your answers live in your Walrus Memory.",
-  metadataBase: new URL("https://ledgerkeeper.vercel.app"),
+  metadataBase: new URL("https://ledgerkeeper.ajkadri.dev"),
   openGraph: {
     title: `${APP_NAME}: labelled Sui records, answered once`,
     description: "Label your Sui history for your accountant. Answer each question once.",

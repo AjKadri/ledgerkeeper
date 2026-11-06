@@ -22,7 +22,7 @@ export default function Image() {
           <div style={{ fontSize: 40, color: "#4F5D70", maxWidth: 980 }}>Answer each question once. Your answers live in your Walrus Memory.</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: "#4F5D70", borderTop: "2px solid #CBD6E2", paddingTop: 24 }}>
-          <span>ledgerkeeper.vercel.app</span>
+          <span>ledgerkeeper.ajkadri.dev</span>
           <span>Chain data via Tatum · Memory on Walrus</span>
         </div>
       </div>

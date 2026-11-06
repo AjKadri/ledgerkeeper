@@ -2,7 +2,7 @@
 
 **Labelled Sui records for your accountant. You answer each unclear transaction once; your answers live in your own Walrus Memory and are reused on every later import and by any other app you allow.**
 
-Live demo: https://ledgerkeeper.vercel.app · Code: https://github.com/AjKadri/ledgerkeeper · Built for Total Recall (Consumer Finance Apps).
+Live demo: https://ledgerkeeper.ajkadri.dev · Code: https://github.com/AjKadri/ledgerkeeper · Built for Total Recall (Consumer Finance Apps).
 
 > Labelling for your accountant, not tax advice. History from 23 Jan 2026 only. Not affiliated with Ledger SAS.
 
