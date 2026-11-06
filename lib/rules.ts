@@ -2,9 +2,8 @@
 import { createHash } from "node:crypto";
 import type { MemWal } from "@mysten-incubation/memwal";
 import type { Rule } from "./classify";
-import { memoryClient, ruleFromText, ruleToText, outcomeFromText, outcomeToText, listAll, type Outcome } from "./memory";
+import { memoryClient, ruleToText, outcomeToText, type Outcome } from "./memory";
 import { UserError } from "./errors";
-import { resolveRules, type Parsed, type Resolved, type StoredOutcome } from "./learning";
 
 export type App = "A" | "B";
 
@@ -14,42 +13,10 @@ export function client(app: App, namespace: string): MemWal {
   return memoryClient({ key, accountId: process.env.MEMWAL_ACCOUNT_ID, serverUrl: process.env.MEMWAL_SERVER_URL, namespace });
 }
 
-export type RuleSet = Resolved & {
-  outcomes: StoredOutcome[];
-  recalled: number;                  // memories recalled (rules + outcomes)
-  listed: number;                    // memories listMemories counts in the namespace
-  incomplete: boolean;               // recall returned fewer memories than listMemories counts
-};
-
-const QUERIES = ["tax-rule match label", "[import] wallet range txs asked answered reused"];
-
-export type RecallOpts = { mem?: Pick<MemWal, "recall" | "listMemories">; retryDelayMs?: number };
-
-export async function recallRules(app: App, namespace: string, opts: RecallOpts = {}): Promise<RuleSet> {
-  const mem = (opts.mem ?? client(app, namespace)) as MemWal;
-  const listed = await listAll(mem, namespace);
-  const created = new Map<string, string>(listed.map((m: any) => [m.blob_id, m.created_at]));
-  let items: any[] = [];
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await Promise.all(QUERIES.map((q) => mem.recall({ query: q, limit: 100 })));
-    const byBlob = new Map<string, any>();
-    for (const r of res) for (const x of r.results) byBlob.set(x.blob_id, x);
-    items = [...byBlob.values()];
-    if (items.length >= listed.length) break;
-    await new Promise((r) => setTimeout(r, opts.retryDelayMs ?? 1500));
-  }
-  const at = (x: any) => created.get(x.blob_id) ?? x.created_at ?? "";
-  const parsed = items.map((x) => ({ rule: ruleFromText(x.text), blob: x.blob_id as string, at: at(x) })).filter((x) => x.rule) as Parsed[];
-  const outcomes: StoredOutcome[] = items
-    .map((x) => ({ o: outcomeFromText(x.text), blob: x.blob_id as string, at: at(x) }))
-    .filter((x) => x.o)
-    .map((x) => ({ ...x.o!, blob: x.blob, at: x.at }));
-  return {
-    ...resolveRules(parsed), outcomes,
-    recalled: parsed.length + outcomes.length, listed: listed.length,
-    incomplete: parsed.length + outcomes.length < listed.length,
-  };
-}
+import { recallWith, type RecallOpts, type RuleSet } from "./recall";
+export type { RuleSet, RecallOpts };
+export const recallRules = (app: App, namespace: string, opts: RecallOpts = {}): Promise<RuleSet> =>
+  recallWith((opts.mem ?? client(app, namespace)) as MemWal, namespace, opts);
 
 // --- writes: kill switch and a best-effort hourly cap (per server instance) ---
 const writeLog: number[] = [];

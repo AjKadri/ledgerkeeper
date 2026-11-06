@@ -1,8 +1,12 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ADDRESS_RE, DEMO_WALLET, IMPORT_SPLIT } from "@/lib/config";
+import dynamic from "next/dynamic";
 import { checkAddress } from "@/lib/address";
-import { friendly } from "@/lib/answers";
+import { friendly, ruleFromValue } from "@/lib/answers";
+import { forgetOwn, loadOwn, type OwnMemory } from "@/lib/byo-store";
+// The wallet, SDK and chain code is only loaded when own-memory mode is used.
+const byo = () => import("@/lib/byo");
 import { fly } from "@/lib/fly";
 import { outcomeChanged } from "@/lib/learning";
 import { dates, prefersReducedMotion, short, usd as usdFmt } from "@/lib/format";
@@ -26,6 +30,8 @@ type ImportResult = {
   writes: { ok: boolean; reason?: string };
   memoryStats: { rules: number; outcomes: number; listed: number; incomplete: boolean };
 };
+
+const OwnMemoryPanel = dynamic(() => import("@/components/OwnMemory").then((m) => m.OwnMemoryPanel), { ssr: false, loading: () => <p className="small muted">Loading wallet support…</p> });
 
 const rand = (n: number) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, "0")).join("");
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -52,6 +58,8 @@ export default function Home() {
   const [seq, setSeq] = useState<"idle" | "running" | "done">("idle");
   const [shownRepeat, setShownRepeat] = useState(0);
   const [mode, setMode] = useState<"sample" | "own" | null>(null);
+  const [memMode, setMemMode] = useState<"demo" | "own">("demo");
+  const [own, setOwn] = useState<OwnMemory | null>(null);
   const [gstep, setGstep] = useState<1 | 2 | 3>(1);
 
   const inflight = useRef(new Set<string>());
@@ -59,6 +67,9 @@ export default function Home() {
   const savesRef = useRef(saves); savesRef.current = saves;
   const drawerRef = useRef(drawer); drawerRef.current = drawer;
   const sessionRef = useRef(session); sessionRef.current = session;
+  const ownRef = useRef(own); ownRef.current = own;
+  const memModeRef = useRef(memMode); memModeRef.current = memMode;
+  const usingOwn = memMode === "own" && !!own;
   const lastRun = useRef<{ name: string; range: { from?: string; to?: string }; addr: string } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,19 +85,21 @@ export default function Home() {
     try { s = localStorage.getItem("lk-session") ?? ""; } catch { /* storage blocked */ }
     if (!/^lk-[a-f0-9]{16}$/.test(s)) { s = "lk-" + rand(8); try { localStorage.setItem("lk-session", s); } catch { /* storage blocked */ } }
     setSession(s);
+    const o = loadOwn(); if (o) { setOwn(o); try { if (localStorage.getItem("lk-mem-mode") === "own") setMemMode("own"); } catch { /* storage blocked */ } }
     fetch("/api/status").then((r) => r.json()).then((j) => setWrites({ ok: j.writesEnabled, reason: j.reason ?? undefined })).catch(() => {});
   }, []);
 
   const refreshDrawer = useCallback(async (ns = sessionRef.current): Promise<DrawerData | null> => {
     if (!ns) return null;
     try {
-      const r = await fetch(`/api/rules?as=A&namespace=${ns}`);
-      const j = await r.json();
-      if (r.ok) { const d = toDrawer(j); setDrawer(d); return d; }
+      let j: any, ok = true;
+      if (ownRef.current && memModeRef.current === "own") j = await (await byo()).ownRecall(ownRef.current);
+      else { const r = await fetch(`/api/rules?as=A&namespace=${ns}`); j = await r.json(); ok = r.ok; }
+      if (ok) { const d = toDrawer(j); setDrawer(d); return d; }
     } catch { /* keep what is shown */ } finally { setDrawerLoading(false); }
     return null;
   }, []);
-  useEffect(() => { if (session) refreshDrawer(session); }, [session, refreshDrawer]);
+  useEffect(() => { if (session && (memMode === "demo" || own)) refreshDrawer(session); }, [session, refreshDrawer, memMode, own]);
 
   function newSession() {
     const s = "lk-" + rand(8);
@@ -98,10 +111,12 @@ export default function Home() {
 
   // ---------- import ----------
   async function run(name: string, range: { from?: string; to?: string }, o?: { memory?: boolean; addr?: string }) {
+    if (memMode === "own" && !own) { say("Finish setting up your own memory first."); return; }
     const addr = o?.addr ?? address, mem = o?.memory ?? memory;
     setBusy(true); setError(""); setWhich(name); lastRun.current = { name, range, addr };
     try {
-      const resp = await fetch("/api/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: addr, namespace: session, memory: mem, ...range }) });
+      const ruleSet = usingOwn ? await (await byo()).ownRecall(own!) : undefined;
+      const resp = await fetch("/api/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: addr, namespace: session, memory: mem, ruleSet, ...range }) });
       const j: ImportResult = await resp.json();
       if (!resp.ok) throw new Error((j as unknown as { error: string }).error);
       setSaves({}); setPick({}); setOutcome(null); setEditing(null); outcomeFor.current = null;
@@ -161,6 +176,8 @@ export default function Home() {
   }, [res]);
 
   // ---------- saving an answer: Sent -> Stored on Walrus -> Searchable, then it files into the drawer ----------
+  const jobStatus = async (id: string): Promise<{ status: string }> =>
+    usingOwn ? (await byo()).ownJob(own!, id) : (await fetch(`/api/job?namespace=${session}&id=${encodeURIComponent(id)}`)).json();
   const setSave = (k: string, s: SaveState) => setSaves((p) => ({ ...p, [k]: s }));
   async function save(match: string, value: string, fromDrawer = false) {
     const key = match.toLowerCase();
@@ -172,14 +189,20 @@ export default function Home() {
     const base = { value, answerId, prev };
     setSave(match, { ...base, phase: "saving", step: "sent" });
     try {
-      const r = await fetch("/api/answer", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ namespace: session, match, value, answerId }) });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error);
+      let j: { jobId: string };
+      if (usingOwn) {
+        const rule = ruleFromValue(key, value); if (!rule) throw new Error("Invalid answer.");
+        j = await (await byo()).ownSaveRule(own!, rule, answerId);
+      } else {
+        const r = await fetch("/api/answer", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ namespace: session, match, value, answerId }) });
+        j = await r.json();
+        if (!r.ok) throw new Error((j as unknown as { error: string }).error);
+      }
       let done = false;
       for (let i = 0; i < 90 && !done; i++) {
         await sleep(2000);
         try {
-          const s = await (await fetch(`/api/job?namespace=${session}&id=${encodeURIComponent(j.jobId)}`)).json();
+          const s = await jobStatus(j.jobId);
           if (s.status === "uploaded" || s.status === "done") setSave(match, { ...base, phase: "saving", step: "stored" });
           if (s.status === "done") done = true;
           if (s.status === "failed" || s.status === "not_found") throw new Error("failed");
@@ -217,18 +240,22 @@ export default function Home() {
     if (!outcomeChanged(p ? { wallet: r.address, range: p.range, txs: p.txs, asked: p.asked, answered: p.answered, reused: p.reused } : null, next)) { setOutcome("unchanged"); return; }
     setOutcome("saving");
     try {
-      const resp = await fetch("/api/outcome", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
-        namespace: session, address: next.wallet, range: next.range, txs: next.txs, asked: next.asked, answered: next.answered, reused: next.reused }) });
-      const j = await resp.json(); if (!resp.ok) throw new Error(j.error);
+      let j: { jobId: string };
+      if (usingOwn) j = await (await byo()).ownSaveOutcome(own!, next);
+      else {
+        const resp = await fetch("/api/outcome", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+          namespace: session, address: next.wallet, range: next.range, txs: next.txs, asked: next.asked, answered: next.answered, reused: next.reused }) });
+        j = await resp.json(); if (!resp.ok) throw new Error((j as unknown as { error: string }).error);
+      }
       for (let i = 0; i < 60; i++) {
         await sleep(2000);
-        const s = await (await fetch(`/api/job?namespace=${session}&id=${encodeURIComponent(j.jobId)}`)).json();
+        const s = await jobStatus(j.jobId);
         if (s.status === "done") { setOutcome("saved"); await refreshDrawer(); say("Import outcome saved to your memory"); return; }
         if (s.status === "failed" || s.status === "not_found") break;
       }
       setOutcome("error");
     } catch { setOutcome("error"); }
-  }, [session, refreshDrawer, say]);
+  }, [session, refreshDrawer, say, usingOwn, own]);
 
   useEffect(() => {
     if (!res || outcomeFor.current === res) return;
@@ -259,11 +286,11 @@ export default function Home() {
   // ---------- derived ----------
   const addr = checkAddress(address);
   const c = res?.counts;
-  const readOnly = !writes.ok;
+  const readOnly = !usingOwn && !writes.ok;
   const incomplete = !!res?.memoryStats.incomplete || !!drawer?.incomplete;
-  const canSave = writes.ok && !incomplete;
+  const canSave = (usingOwn || writes.ok) && !incomplete;
   const exportHref = res ? `/api/export?as=A&address=${res.address}&namespace=${session}` : "#";
-  const accountantHref = res ? `/accountant?address=${res.address}&ns=${session}` : "#";
+  const accountantHref = usingOwn ? "#" : res ? `/accountant?address=${res.address}&ns=${session}` : "#";
   const questions = res?.questions ?? [];
   const showFm = !!res && res.memory && res.answeredFromMemory.length > 0;
   const guided = mode === "sample";
@@ -285,17 +312,35 @@ export default function Home() {
     }, 60);
   }, []);
 
+  function chooseMem(m: "demo" | "own") {
+    if (m === memMode) return;
+    setMemMode(m); memModeRef.current = m;
+    try { localStorage.setItem("lk-mem-mode", m); } catch { /* storage blocked */ }
+    setRes(null); setSaves({}); setPick({}); setDrawer(null); setOutcome(null); setError(""); setMode(null); setEditing(null);
+    outcomeFor.current = null; lastRun.current = null; setDrawerLoading(true);
+    if (m === "demo") fetch("/api/status").then((r) => r.json()).then((j) => setWrites({ ok: j.writesEnabled, reason: j.reason ?? undefined })).catch(() => {});
+  }
+  async function exportOwn() {
+    if (!res || !own) { say("Import a wallet first."); return; }
+    try {
+      const r = await fetch("/api/export", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: res.address, ruleSet: await (await byo()).ownRecall(own) }) });
+      if (!r.ok) throw new Error((await r.json()).error);
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement("a"); a.href = url; a.download = "ledgerkeeper-own-memory.csv"; a.click(); URL.revokeObjectURL(url);
+    } catch (e) { say((e as Error).message || "Export failed."); }
+  }
+
   const commands: Command[] = useMemo(() => [
     { id: "sample", title: "Import the sample wallet", run: runSample },
     { id: "imp1", title: "Sample wallet: first import (Jan–Jun)", run: () => runFor("First import (Jan–Jun)", { to: IMPORT_SPLIT.import1.to }) },
     { id: "imp2", title: "Sample wallet: next import (Jul–Aug)", run: () => runFor("Next import (Jul–Aug)", IMPORT_SPLIT.import2) },
     { id: "impall", title: "Import full history", run: () => runFor("Full history", {}) },
     { id: "new", title: "Start over (new demo session)", run: newSession },
-    { id: "export", title: "Export CSV", run: () => { if (res) window.location.href = exportHref; else say("Import a wallet first."); } },
-    { id: "acct", title: "Open the accountant view", run: () => { if (res) window.open(accountantHref, "_blank"); else say("Import a wallet first."); } },
+    { id: "export", title: "Export CSV", run: () => { if (usingOwn) exportOwn(); else if (res) window.location.href = exportHref; else say("Import a wallet first."); } },
+    { id: "acct", title: "Open the accountant view", run: () => { if (usingOwn) say("The accountant view works with the demo memory only, for now."); else if (res) window.open(accountantHref, "_blank"); else say("Import a wallet first."); } },
     { id: "memory", title: memory ? "Show this import without your memory" : "Show this import with your memory", run: () => switchMemory(memory ? "off" : "on") },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [res, memory, exportHref, accountantHref, session, address]);
+  ], [res, memory, exportHref, accountantHref, session, address, usingOwn, own]);
 
   // Runs an import for the address in the field, or the sample wallet if the field is empty or not valid yet.
   function runFor(name: string, range: { from?: string; to?: string }) {
@@ -331,6 +376,16 @@ export default function Home() {
     </div>
   );
 
+  const memChoice = (
+    <div className="memchoice">
+      <Segmented label="Memory" value={memMode} onChange={chooseMem} disabled={busy}
+        options={[{ value: "demo", text: "Demo memory" }, { value: "own", text: "Use my own memory (beta)" }]} />
+      {memMode === "own" && (
+        <OwnMemoryPanel own={own} onReady={(m) => { setOwn(m); ownRef.current = m; }} onForget={() => { forgetOwn(); setOwn(null); ownRef.current = null; setDrawer(null); setRes(null); setSaves({}); setOutcome(null); say("This browser forgot your key."); }} />
+      )}
+    </div>
+  );
+
   const started = !!res || busy || !!error;
 
   return (
@@ -351,10 +406,11 @@ export default function Home() {
               <div className="hero__form">
                 {field(true)}
                 <div className="hero__actions">
-                  <button type="button" className="btn" disabled={!addr.ok || busy || !session} onClick={() => runOwn()}>Import</button>
-                  <button type="button" className="btn btn--primary" disabled={busy || !session} onClick={runSample}>Try the sample wallet</button>
-                  <span className="small muted">The sample is a public wallet with a fictional owner.</span>
+                  <button type="button" className={`btn${memMode === "own" ? " btn--primary" : ""}`} disabled={!addr.ok || busy || !session} onClick={() => runOwn()}>Import</button>
+                  {memMode === "demo" && <button type="button" className="btn btn--primary" disabled={busy || !session} onClick={runSample}>Try the sample wallet</button>}
+                  <span className="small muted">{memMode === "demo" ? "The sample is a public wallet with a fictional owner." : "The sample wallet is available with the demo memory only."}</span>
                 </div>
+                {memChoice}
               </div>
               <div className="howto">
                 <div><h3>Import</h3><p>Paste any Sui address. History comes through Tatum, the newest 500 transactions, from 23 Jan 2026.</p></div>
@@ -367,6 +423,7 @@ export default function Home() {
           {started && (
             <Section>
               <div className="walletbar">{field(false)}</div>
+              {memChoice}
               {rangeButtons}
               {error && (
                 <div className="banner banner--bad" role="alert" style={{ marginTop: 16, marginBottom: 0 }}>
@@ -497,8 +554,17 @@ export default function Home() {
                   <div className="final">
                     <div>
                       <h2>Send it to your accountant</h2>
-                      <p>The accountant view is a separate app. It reads the same rules from your memory with its own key, so nothing is typed in again.</p>
-                      <a className="btn btn--primary" href={accountantHref} target="_blank" rel="noreferrer">Open the accountant view</a>
+                      {usingOwn ? (
+                        <>
+                          <p>Download the labelled CSV for your accountant. The accountant view reads the demo memory only, for now; your own memory is read with the key in this browser.</p>
+                          <button type="button" className="btn btn--primary" onClick={exportOwn}>Download CSV</button>
+                        </>
+                      ) : (
+                        <>
+                          <p>The accountant view is a separate app. It reads the same rules from your memory with its own key, so nothing is typed in again.</p>
+                          <a className="btn btn--primary" href={accountantHref} target="_blank" rel="noreferrer">Open the accountant view</a>
+                        </>
+                      )}
                     </div>
                     <div>
                       <h2>Try your own wallet</h2>
@@ -510,9 +576,11 @@ export default function Home() {
               )}
 
               <Section title="Transactions" note={`${res.rows.length} rows, ${dates(res.rows[0]?.date.slice(0, 10) ?? "", res.rows[res.rows.length - 1]?.date.slice(0, 10) ?? "")}`}>
-                <Ledger rows={res.rows} onJumpRule={jumpToRule} exportHref={exportHref} app="A" />
+                <Ledger rows={res.rows} onJumpRule={jumpToRule} exportHref={exportHref} onExport={usingOwn ? exportOwn : undefined} app="A" />
                 <p className="small muted no-print" style={{ marginTop: 16 }}>
-                  Sending this to your accountant? <a href={accountantHref} target="_blank" rel="noreferrer">Open the accountant view</a>, a separate app that reads the same rules with its own key.
+                  {usingOwn
+                    ? <>Sending this to your accountant? Download the CSV above. The accountant view works with the demo memory only, for now.</>
+                    : <>Sending this to your accountant? <a href={accountantHref} target="_blank" rel="noreferrer">Open the accountant view</a>, a separate app that reads the same rules with its own key.</>}
                 </p>
               </Section>
             </div>
@@ -520,7 +588,7 @@ export default function Home() {
 
         </main>
 
-        <Drawer data={drawer} saves={saves} writesOn={writes.ok} writesReason={writes.reason} session={session} onStartOver={newSession} editing={editing} setEditing={setEditing}
+        <Drawer data={drawer} saves={saves} writesOn={writes.ok} writesReason={writes.reason} session={session} ownLabel={usingOwn ? own!.accountId : undefined} onStartOver={newSession} editing={editing} setEditing={setEditing}
           onChange={(m, v) => save(m, v, true)} open={sheet} onClose={() => setSheet(false)} pulse={pulse} loading={drawerLoading} />
       </div>
 

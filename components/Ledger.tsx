@@ -23,8 +23,8 @@ export function Skeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function Ledger({ rows, onJumpRule, exportHref, app, hideExport }: {
-  rows: Row[]; onJumpRule?: (match: string) => void; exportHref: string; app: "A" | "B"; hideExport?: boolean;
+export function Ledger({ rows, onJumpRule, exportHref, app, hideExport, onExport }: {
+  rows: Row[]; onJumpRule?: (match: string) => void; exportHref: string; app: "A" | "B"; hideExport?: boolean; onExport?: () => void;
 }) {
   const [group, setGroup] = useState<string>("all");
   const [q, setQ] = useState("");
@@ -57,7 +57,9 @@ export function Ledger({ rows, onJumpRule, exportHref, app, hideExport }: {
           <span style={{ position: "absolute", left: 10, top: 12, color: "var(--muted)" }}><IconSearch /></span>
           <input className="field field--text" style={{ paddingLeft: 32 }} type="search" placeholder="Search by address or digest" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} />
         </label>
-        {!hideExport && <a className="btn btn--primary" href={exportHref}><IconDownload /> Export CSV</a>}
+        {!hideExport && (onExport
+          ? <button type="button" className="btn btn--primary" onClick={onExport}><IconDownload /> Export CSV</button>
+          : <a className="btn btn--primary" href={exportHref}><IconDownload /> Export CSV</a>)}
       </div>
       <div className="ledger-wrap" tabIndex={0} aria-label="Transactions">
         <table className="ledger">

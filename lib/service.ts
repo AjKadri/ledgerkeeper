@@ -7,6 +7,7 @@ import { countQuestions, latestOutcome, ruleValue } from "./learning";
 import { recallRules, writesAllowed, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
 import { USD_BASIS } from "./price";
+import { parseRuleSet } from "./wire";
 
 export { UserError };
 
@@ -22,7 +23,9 @@ const date = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.tes
 
 export async function runImport(body: any) {
   const address = checkAddress(body.address);
-  const namespace = checkNamespace(body.namespace);
+  // Own-memory mode sends its rule set; otherwise the demo memory is recalled with the server's key.
+  const own = body.ruleSet !== undefined;
+  const namespace = own ? "own" : checkNamespace(body.namespace);
   const from = date(body.from), to = date(body.to);
   const memory = body.memory !== false;
 
@@ -31,7 +34,7 @@ export async function runImport(body: any) {
   if (!txs.length) throw new UserError(hist.txs.length ? "No transactions in that date range." : await emptyMessage(address));
 
   // Always recall, so both columns (memory ON / OFF) can be shown for the same import.
-  const rs = await recallRules("A", namespace);
+  const rs = own ? parseRuleSet(body.ruleSet) : await recallRules("A", namespace);
   const ruleKeys = new Set(rs.rules.map((r) => r.match.toLowerCase()));
   const withoutQs = questionsFrom(txs.map((t) => classify(t, address)));
   const resultsOn = txs.map((t) => classify(t, address, rs.rules));
@@ -81,16 +84,16 @@ export async function runImport(body: any) {
       rules: rs.rules, blobs: rs.blobs, ats: rs.ats, events: rs.events, listed: rs.listed, incomplete: rs.incomplete,
       outcomes: rs.outcomes.map((o) => ({ range: o.range, txs: o.txs, asked: o.asked, answered: o.answered, reused: o.reused, at: o.at, blob: o.blob })),
     },
-    writes: writesAllowed(),
+    writes: own ? { ok: true } : writesAllowed(),
     memoryStats: { rules: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, recalled: rs.recalled, incomplete: rs.incomplete },
   };
 }
 
-export async function runExport(app: App, body: { address: unknown; namespace: unknown }) {
+export async function runExport(app: App, body: { address: unknown; namespace: unknown; ruleSet?: unknown }) {
   const address = checkAddress(body.address);
-  const namespace = checkNamespace(body.namespace);
+  const own = body.ruleSet !== undefined;
   const hist = await getHistory(address);
-  const rs = await recallRules(app, namespace);
+  const rs = own ? parseRuleSet(body.ruleSet) : await recallRules(app, checkNamespace(body.namespace));
   const rows = toRows(hist.txs, address, rs.rules);
   return {
     csv: toCsv(rows), rows: rows.length, source: hist.source, cachedAt: hist.cachedAt,

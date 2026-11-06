@@ -22,13 +22,14 @@ export function rangeText(r: string): string {
 type Item =
   | { k: "saved" | "update" | "outcome"; at: string; text: React.ReactNode };
 
-export function Drawer({ data, saves, writesOn, writesReason, session, editing, setEditing, onChange, open, onClose, pulse, loading, onStartOver }: {
+export function Drawer({ data, saves, writesOn, writesReason, session, editing, setEditing, onChange, open, onClose, pulse, loading, onStartOver, ownLabel }: {
   data: DrawerData | null;
   saves: Record<string, SaveState>;
   writesOn: boolean;
   writesReason?: string;
   session: string;
   onStartOver: () => void;
+  ownLabel?: string;
   editing: string | null;
   setEditing: (m: string | null) => void;
   onChange: (match: string, value: string) => void;
@@ -114,9 +115,9 @@ export function Drawer({ data, saves, writesOn, writesReason, session, editing, 
           )}
 
           <div className="drawer__foot">
-            <span>Demo session <button type="button" className="linkbtn" onClick={onStartOver}>Start over</button></span>
+            {ownLabel ? <span>Your own memory, account <Copyable value={ownLabel} shown={ownLabel.slice(0, 8) + "…" + ownLabel.slice(-4)} /></span> : <span>Demo session <button type="button" className="linkbtn" onClick={onStartOver}>Start over</button></span>}
             <span>{writesOn ? "Memory writes are on." : <b style={{ color: "var(--ink)" }}>Read-only: {writesReason ?? "memory writes are switched off."}</b>}</span>
-            <span>The demo memory is visible to the Walrus Memory relayer.</span>
+            <span>{ownLabel ? "The Walrus Memory relayer stores and can read these memories." : "The demo memory is visible to the Walrus Memory relayer."}</span>
           </div>
         </div>
       </aside>

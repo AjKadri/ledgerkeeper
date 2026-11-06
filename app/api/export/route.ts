@@ -12,3 +12,12 @@ export async function GET(req: Request) {
     return new NextResponse(out.csv, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="ledgerkeeper-${app}.csv"` } });
   } catch (e) { return fail(e); }
 }
+
+// Own-memory mode: the browser sends the rule set it recalled with its own key; nothing is read from the demo memory.
+export async function POST(req: Request) {
+  try {
+    const b = await req.json();
+    const out = await runExport("A", { address: b.address, namespace: undefined, ruleSet: b.ruleSet ?? {} });
+    return new NextResponse(out.csv, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="ledgerkeeper-own-memory.csv"' } });
+  } catch (e) { return fail(e); }
+}

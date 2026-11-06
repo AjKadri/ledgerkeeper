@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@mysten-incubation/memwal": "0.1.12",
+    "@mysten/dapp-kit-react": "^2.1.44",
+    "@mysten/sui": "^2.39.0",
     "dotenv": "^16.4.5",
     "next": "^15.5.29",
     "react": "^19.3.1",

@@ -19,6 +19,17 @@ The demo uses a real public wallet with a fictional owner ("Sam"): Cetus swaps a
 
 You can also paste any Sui address on the product page or in the app (read-only, live through Tatum). The app lives at `/app`; the accountant view at `/accountant`.
 
+## Use my own memory (beta)
+
+The default is the demo memory. In `/app`, **Use my own memory (beta)** lets a visitor use their own Walrus Memory account instead:
+
+1. Connect a Sui wallet (Slush or any wallet-standard wallet) through dapp-kit. LedgerKeeper never sees the wallet's keys.
+2. If the wallet has no Walrus Memory account, create one (`create_account`). Before every wallet transaction the page shows what it does, the estimated network fee (a simulation, about 0.005 SUI for the account and 0.002 SUI for the key) and the wallet balance.
+3. A key is generated in the browser and registered on the account (`add_delegate_key`). It is stored in this browser only; anyone with access to the browser can use it. **Forget this browser** deletes it; the wallet can also remove it on-chain.
+4. The browser signs its own save and recall requests with that key. Rules are recalled in the browser and sent with each import, so the server never holds the user's key or reads their memory.
+
+Two honest notes. The relayer answers browser requests only from its own allowlisted origins (no CORS header for this site), so the browser's signed requests go through a thin same-origin pass-through (`/api/relay`) that forwards them untouched and holds no credentials. And the accountant view reads the demo memory only, for now: it cannot be given a second key yet, so for an own memory the hand-over is the CSV from the main app. The connect-flow screenshots in `docs/shots/byo` use a mock wallet that only reports an address; the on-chain steps are verified separately (see HANDOFF).
+
 ## What it looks like
 
 ![After import 2 with memory on: 0 repeat questions, the memory drawer on the right](docs/shots/1440-import2.png)
