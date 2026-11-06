@@ -108,7 +108,7 @@ export function Drawer({ data, saves, writesOn, writesReason, session, editing, 
           {items.length === 0 ? <p className="small muted">Your first import and every change will be listed here.</p> : (
             <ol className="tl">
               {items.slice(0, 12).map((it, i) => (
-                <li key={i} data-k={it.k}>{it.text}<span className="when">{ago(it.at, now)}</span></li>
+                <li key={i} data-k={it.k}>{it.text}<span className="when" title={new Date(it.at).toUTCString()}>{day(it.at)}</span></li>
               ))}
             </ol>
           )}

@@ -50,17 +50,17 @@ export default function Product() {
             <h2 id="how-h">How it works</h2>
             <ol className="steps3">
               <li>
-                <img src="/product/step-import.png" width="824" height="383" loading="lazy" alt="Step 1 of the guided sample: LedgerKeeper labelled 28 of 36 transactions, 5 need you." />
+                <img src="/product/step-import.png" width="412" height="247" loading="lazy" alt="Step 1 of the guided sample: LedgerKeeper labelled 28 of 36 transactions, 5 need you." />
                 <h3><span>1</span> Import</h3>
                 <p>Paste a Sui address. LedgerKeeper reads the history through Tatum and labels what it can: transfers, swaps, liquidity, staking.</p>
               </li>
               <li>
-                <img src="/product/step-answer.png" width="824" height="206" loading="lazy" alt="A question card asking who a counterparty is, with four answers to choose from." />
+                <img src="/product/step-answer.png" width="396" height="295" loading="lazy" alt="A question card asking who a counterparty is, with four answers to choose from." />
                 <h3><span>2</span> Answer once</h3>
                 <p>Each unclear counterparty or contract is one question. Your answer is saved as a rule and is never asked again.</p>
               </li>
               <li>
-                <img src="/product/step-hand.png" width="1208" height="320" loading="lazy" alt="The accountant view with a labelled ledger and a Download CSV button." />
+                <img src="/product/step-hand.png" width="592" height="226" loading="lazy" alt="The accountant view with a labelled ledger and a Download CSV button." />
                 <h3><span>3</span> Hand over</h3>
                 <p>Send a labelled CSV, or open the accountant view, which reads your rules with its own key.</p>
               </li>

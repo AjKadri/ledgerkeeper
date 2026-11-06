@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LedgerKeeper logo options</title>
+<style>
+:root{--ink:#1C2533;--paper:#F4F6F8;--sheet:#fff;--rule:#CBD6E2;--muted:#4F5D70}
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink);padding:32px}
+h1{font-size:1.5rem;margin:0 0 4px}p.sub{margin:0 0 28px;color:var(--muted);max-width:70ch}
+.opt{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:24px;margin-bottom:24px}
+.opt h2{margin:0 0 4px;font-size:1.125rem}.opt p{margin:0 0 16px;color:var(--muted);font-size:.9375rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.light{background:#F4F6F8;color:#1C2533;border:1px solid var(--rule);--mk:#F3D35B}
+.dark{background:#0F1620;color:#E6ECF2;--mk:#F3D35B}
+.sizes{display:flex;align-items:flex-end;gap:24px}.sizes figure{margin:0;text-align:center;font-size:.75rem}.sizes span{opacity:.7}
+.sizes svg{display:block;margin:0 auto 4px}
+.word{display:flex;align-items:center;gap:10px;font-weight:650;font-size:1.25rem;letter-spacing:-.01em}
+.mono{display:flex;align-items:center;gap:10px;font-size:.8125rem}
+@media(max-width:700px){.row{grid-template-columns:1fr}}
+</style></head><body>
+<h1>LedgerKeeper: logo A, revised</h1>
+<p class="sub">Not shipped. The 16 px and 32 px renders are shown again at 12x below (pixelated) to check legibility.</p>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="A" viewBox="0 0 32 32"><path d="M7 12.6L30 11.7 30.2 18.2 7 18.4z" fill="var(--mk,#F3D35B)"/><rect x="5" y="3" width="22" height="26" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M9 9h14M9 15h14M9 22h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol></defs></svg><section class="opt"><div class="row"><div class="panel light"><div class="sizes"><figure><svg width="16" height="16"><use href="#A"/></svg><span>16</span></figure><figure><svg width="32" height="32"><use href="#A"/></svg><span>32</span></figure><figure><svg width="180" height="180"><use href="#A"/></svg><span>180</span></figure></div><div class="word"><svg width="28" height="28"><use href="#A"/></svg>LedgerKeeper</div><div class="mono"><svg width="20" height="20" style="--mk:currentColor"><use href="#A"/></svg>one colour, marker removed</div></div><div class="panel dark"><div class="sizes"><figure><svg width="16" height="16"><use href="#A"/></svg><span>16</span></figure><figure><svg width="32" height="32"><use href="#A"/></svg><span>32</span></figure><figure><svg width="180" height="180"><use href="#A"/></svg><span>180</span></figure></div><div class="word"><svg width="28" height="28"><use href="#A"/></svg>LedgerKeeper</div><div class="mono"><svg width="20" height="20" style="--mk:currentColor"><use href="#A"/></svg>one colour, marker removed</div></div></div></section><section class="opt"><h2>Real pixels, enlarged 12x</h2><div class="row" id="zoom"></div></section></body></html>
