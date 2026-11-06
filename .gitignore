@@ -13,3 +13,4 @@ dist/
 .vercel
 .env*
 ISSUES-DRAFT.md
+AGENTS.md
