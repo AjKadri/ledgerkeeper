@@ -122,11 +122,11 @@ function Inner({ own, onReady, onForget }: { own: OwnMemory | null; onReady: (m:
       <div className="own">
         <p><b>Using your own memory.</b> Answers are saved to your Walrus Memory account with a key made in this browser.</p>
         <dl className="own__facts">
-          <div><dt>Account</dt><dd><Copyable value={own.accountId} shown={own.accountId.slice(0, 10) + "…" + own.accountId.slice(-6)} /></dd></div>
+          <div><dt>Account</dt><dd><Copyable value={own.accountId} shown={own.accountId} label="Copy account ID" /> <span className="muted small">(click to copy)</span></dd></div>
           <div><dt>Owner wallet</dt><dd><Copyable value={own.owner} shown={own.owner.slice(0, 10) + "…" + own.owner.slice(-6)} /></dd></div>
           <div><dt>Browser key</dt><dd><Copyable value={own.keyAddress} shown={own.keyAddress.slice(0, 10) + "…" + own.keyAddress.slice(-6)} /></dd></div>
-          {own.digests?.create && <div><dt>Create account tx</dt><dd><a href={scan(own.digests.create)} target="_blank" rel="noreferrer">{own.digests.create.slice(0, 10)}…</a></dd></div>}
-          {own.digests?.addKey && <div><dt>Add key tx</dt><dd><a href={scan(own.digests.addKey)} target="_blank" rel="noreferrer">{own.digests.addKey.slice(0, 10)}…</a></dd></div>}
+          {own.digests?.create && <div><dt>Create account tx</dt><dd><a href={scan(own.digests.create)} target="_blank" rel="noreferrer">{own.digests.create}</a></dd></div>}
+          {own.digests?.addKey && <div><dt>Add key tx</dt><dd><a href={scan(own.digests.addKey)} target="_blank" rel="noreferrer">{own.digests.addKey}</a></dd></div>}
         </dl>
         <p className="own__warn" role="note">{KEY_WARNING}</p>
         <div className="own__row">
