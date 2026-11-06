@@ -23,8 +23,8 @@ export function Skeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function Ledger({ rows, onJumpRule, exportHref, app }: {
-  rows: Row[]; onJumpRule?: (match: string) => void; exportHref: string; app: "A" | "B";
+export function Ledger({ rows, onJumpRule, exportHref, app, hideExport }: {
+  rows: Row[]; onJumpRule?: (match: string) => void; exportHref: string; app: "A" | "B"; hideExport?: boolean;
 }) {
   const [group, setGroup] = useState<string>("all");
   const [q, setQ] = useState("");
@@ -57,7 +57,7 @@ export function Ledger({ rows, onJumpRule, exportHref, app }: {
           <span style={{ position: "absolute", left: 10, top: 12, color: "var(--muted)" }}><IconSearch /></span>
           <input className="field field--text" style={{ paddingLeft: 32 }} type="search" placeholder="Search by address or digest" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} />
         </label>
-        <a className="btn btn--primary" href={exportHref}><IconDownload /> Export CSV</a>
+        {!hideExport && <a className="btn btn--primary" href={exportHref}><IconDownload /> Export CSV</a>}
       </div>
       <div className="ledger-wrap" tabIndex={0} aria-label="Transactions">
         <table className="ledger">

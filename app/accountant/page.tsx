@@ -58,7 +58,7 @@ function View() {
                     <div><div className="v num">{out.rules.count}</div><div className="k">rules from the owner&rsquo;s memory (plus {out.rules.outcomes} import outcome{out.rules.outcomes === 1 ? "" : "s"})</div></div>
                   </div>
                   <p className="small muted" style={{ marginTop: 16 }}>
-                    Data: {out.source === "cached" ? `cached at ${out.cachedAt}` : "live from Tatum"}. Memory holds <span className="num">{out.rules.listed}</span> memories in total. usd_value covers SUI legs only and is approximate (on-chain pool price, Cetus SUI/USDC); other coins are left blank.
+                    Data: {out.source === "cached" ? `cached at ${out.cachedAt}` : "live from Tatum"}. Memory holds <span className="num">{out.rules.listed}</span> memories in total. USD value covers SUI legs only and is approximate (on-chain pool price, Cetus SUI/USDC); other coins are left blank.
                   </p>
                   {out.rules.incomplete && <div className="banner banner--bad" role="alert" style={{ marginTop: 16 }}><b>Memory returned fewer items than it holds.</b> Reload before trusting this export.</div>}
                   {out.rules.updates.map((u) => <p key={u.match} className="small" style={{ marginTop: 8, color: "var(--green)" }}>Rule <span className="mono">{short(u.match)}</span> was updated from {friendly(u.from, u.match)} to {friendly(u.to, u.match)}.</p>)}
@@ -71,7 +71,7 @@ function View() {
             </Section>
 
             <Section title="Transactions" note={out ? `${out.ledger.length} rows` : undefined}>
-              {out ? <Ledger rows={out.ledger} exportHref={`/api/export?as=B&address=${address}&namespace=${ns}`} app="B" /> : <Skeleton />}
+              {out ? <Ledger rows={out.ledger} exportHref={`/api/export?as=B&address=${address}&namespace=${ns}`} app="B" hideExport /> : <Skeleton />}
             </Section>
 
             {out && (

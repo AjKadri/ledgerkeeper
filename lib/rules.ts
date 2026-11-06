@@ -62,18 +62,23 @@ export function writesAllowed(): { ok: boolean; reason?: string } {
   return { ok: true };
 }
 
-async function write(namespace: string, text: string, actionId: string) {
+// Rules: same action id + same text => same key, so a double click or retry cannot create two memories, while a
+// correction (new action id, even back to an old label) is a new memory. Outcomes pass no action id: the key comes
+// from the content alone, so an identical outcome can never be stored twice.
+export function idempotencyKeyFor(namespace: string, text: string, actionId?: string): string {
+  return createHash("sha256").update(actionId === undefined ? `${namespace}|${text}` : `${namespace}|${actionId}|${text}`).digest("hex").slice(0, 40);
+}
+
+async function write(namespace: string, text: string, actionId?: string) {
   const gate = writesAllowed();
   if (!gate.ok) throw new UserError(gate.reason);
-  // Same action id + same text => same key, so a double click or retry cannot create two memories.
-  // A new action id (a correction, even back to an old label) is a new memory and wins by created_at.
-  const idempotencyKey = createHash("sha256").update(`${namespace}|${actionId}|${text}`).digest("hex").slice(0, 40);
+  const idempotencyKey = idempotencyKeyFor(namespace, text, actionId);
   const res = await client("A", namespace).remember(text, { idempotencyKey });
   writeLog.push(Date.now());
   return { jobId: res.job_id, status: res.status };
 }
 export const saveRule = (namespace: string, rule: Rule, actionId: string) => write(namespace, ruleToText(rule), actionId);
-export const saveOutcome = (namespace: string, o: Outcome, actionId: string) => write(namespace, outcomeToText(o), actionId);
+export const saveOutcome = (namespace: string, o: Outcome) => write(namespace, outcomeToText(o));
 
 export async function jobStatus(namespace: string, jobId: string) {
   return client("A", namespace).getRememberStatus(jobId);

@@ -55,6 +55,9 @@ export async function runImport(body: any) {
   });
   const ledger = toRows(txs, address, memory ? rs.rules : []);
   const last = latestOutcome(rs.outcomes, address);
+  // The latest outcome stored for this same wallet and range: a re-import is compared against it, not against another range.
+  const rangeKey = `${from ?? "start"}..${to ?? "now"}`;
+  const same = latestOutcome(rs.outcomes.filter((o) => o.range === rangeKey), address);
   // Approximate USD value of the SUI legs in this import (other coins are not valued).
   const rows = toRows(txs, address, rs.rules).filter((r) => r.usd_value !== "");
   const usdNum = (r: { usd_value: string }) => Number(r.usd_value);
@@ -70,6 +73,7 @@ export async function runImport(body: any) {
     memory, labelCounts, questions, counts: { on, off },
     // "reused" = repeat questions memory answered for us in this import
     reused: off.repeat,
+    sameRangeOutcome: same ? { range: same.range, txs: same.txs, asked: same.asked, answered: same.answered, reused: same.reused } : null,
     previousOutcome: last ? { range: last.range, txs: last.txs, asked: last.asked, answered: last.answered, reused: last.reused, blob: last.blob } : null,
     updates: rs.updates,
     usd, answeredFromMemory, rows: ledger,

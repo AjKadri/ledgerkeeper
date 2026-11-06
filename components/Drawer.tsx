@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { friendly, optionsFor } from "@/lib/answers";
 import { ago, day, short } from "@/lib/format";
 import { Copyable, Steps } from "./ui";
+import { Hint } from "./Guide";
 import type { DrawerData, DrawerOutcome, SaveState } from "./types";
 
 const blob = (b: string) => (
@@ -21,12 +22,13 @@ export function rangeText(r: string): string {
 type Item =
   | { k: "saved" | "update" | "outcome"; at: string; text: React.ReactNode };
 
-export function Drawer({ data, saves, writesOn, writesReason, session, editing, setEditing, onChange, open, onClose, pulse, loading }: {
+export function Drawer({ data, saves, writesOn, writesReason, session, editing, setEditing, onChange, open, onClose, pulse, loading, onStartOver }: {
   data: DrawerData | null;
   saves: Record<string, SaveState>;
   writesOn: boolean;
   writesReason?: string;
   session: string;
+  onStartOver: () => void;
   editing: string | null;
   setEditing: (m: string | null) => void;
   onChange: (match: string, value: string) => void;
@@ -61,6 +63,7 @@ export function Drawer({ data, saves, writesOn, writesReason, session, editing, 
           <button type="button" className="btn btn--quiet drawer__close" onClick={onClose}>Close memory drawer</button>
           <h2>Your memory</h2>
           <p className="drawer__sub">Walrus Memory, mainnet. Every answer is filed here as a rule.</p>
+          <Hint id="drawer">Every answer you give is filed here, in your Walrus Memory.</Hint>
           <div className="drawer__stat">
             <div><div className="v num" data-dock-count>{loading && !data ? "–" : rules.length}</div><div className="k">{rules.length === 1 ? "rule" : "rules"}</div></div>
             <div><div className="v num">{data?.outcomes.length ?? (loading ? "–" : 0)}</div><div className="k">{data?.outcomes.length === 1 ? "import outcome" : "import outcomes"}</div></div>
@@ -111,7 +114,7 @@ export function Drawer({ data, saves, writesOn, writesReason, session, editing, 
           )}
 
           <div className="drawer__foot">
-            <span>Session <Copyable value={session} shown={session} /></span>
+            <span>Demo session <button type="button" className="linkbtn" onClick={onStartOver}>Start over</button></span>
             <span>{writesOn ? "Memory writes are on." : <b style={{ color: "var(--ink)" }}>Read-only: {writesReason ?? "memory writes are switched off."}</b>}</span>
             <span>The demo memory is visible to the Walrus Memory relayer.</span>
           </div>

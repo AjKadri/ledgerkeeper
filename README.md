@@ -10,14 +10,14 @@ Live demo: https://ledgerkeeper.vercel.app · Code: https://github.com/AjKadri/l
 
 The demo uses a real public wallet with a fictional owner ("Sam"): Cetus swaps and liquidity, 47 transactions.
 
-1. Open the live URL and click **Import 1: up to 30 Jun**. 36 transactions are labelled (swap, LP add/remove/compound, rewards, staking). Five questions remain, grouped by counterparty or contract ("2 transfers with 0x6095…: who is this?").
-2. Answer each one (My own wallet / An exchange / A person or business / Ignore, or Swap / LP / Reward claim / Payment for contracts). Each answer is saved as a rule in Walrus Memory. The page shows "saving…" (about 20 s) and then a link to the stored blob.
-3. When all are answered, an **import outcome** memory is saved too.
-4. Click **Import 2: Jul–Aug**. The headline reads **Repeat questions: 0 with memory / 2 without**, with 3 genuinely new questions, and a line from the outcome memory: "Last time you answered 5 of 5 questions. This time: 3 new questions, 2 reused from memory." The table shows memory ON and OFF side by side for the same import.
-5. Change one saved answer under **Your saved rules**. The newest answer wins and the next import says "updated from A to B".
-6. Open the **Accountant view**. It is a separate app using a separate delegate key, it asks nothing, and it produces the same CSV as the main app (byte for byte; the acceptance script diffs them).
+1. Open the live URL (the product page) and click **Try the sample wallet**. The guided sample opens in the app with a three-step bar.
+2. **First import (Jan–Jun).** "LedgerKeeper labelled 28 of 36 transactions. 5 need you." Click **Answer 5 questions**.
+3. **Answer the questions.** Each one is a counterparty or contract, answered once (My own wallet / An exchange / A person or business / Ignore, or Swap / LP / Reward claim / Payment for contracts). Each answer is saved as a rule in Walrus Memory (about 20 s: Sent, Stored on Walrus, Searchable) and files itself into the drawer. When all are answered, an **import outcome** memory is saved too, but only if it differs from the last one stored for that wallet and range.
+4. **Next import (Jul–Aug).** The headline reads **0 questions you'd have answered again** (2 without your memory), with 3 genuinely new questions, and a line from the outcome memory: "Last time you answered 5 of 5 questions. This time: 3 new questions, 2 reused from memory." The page shows **With your memory** and **Without it** side by side for the same import.
+5. Change one saved answer in the memory drawer. The newest answer wins and the next import says "updated from A to B".
+6. **Send it to your accountant** opens the accountant view. It is a separate app using a separate delegate key, it asks nothing, and it produces the same CSV as the main app (byte for byte; the acceptance script diffs them).
 
-You can also paste any Sui address (read-only, live through Tatum).
+You can also paste any Sui address on the product page or in the app (read-only, live through Tatum). The app lives at `/app`; the accountant view at `/accountant`.
 
 ## What it looks like
 
@@ -43,7 +43,7 @@ Mainnet, SDK `@mysten-incubation/memwal` 0.1.12. A fresh namespace per demo sess
 - **Outcome memories:** one per import, `[import] wallet=… range=… txs=… asked=… answered=… reused=… v=1`. The next import reads the newest outcome for the wallet and shows the learning ("last time you answered X; this time Y new, Z reused").
 - **Newest wins:** corrections are new memories. Rules are resolved by newest `created_at` (taken from `listMemories`, because recall results may lack it). Correcting back to an old label still works.
 - **Recall you can trust:** every recall is cross-checked against `listMemories`. If recall returns fewer memories than the namespace holds, it retries, then warns and pauses saving rather than silently asking again.
-- **Writes without blocking the page:** `remember()` returns a job id; the page polls the job for the blob id. An idempotency key (namespace + answer id + text) means a double click or retry makes one memory, while a deliberate correction is a new one.
+- **Writes without blocking the page:** `remember()` returns a job id; the page polls the job for the blob id. An idempotency key (namespace + answer id + text) means a double click or retry makes one memory, while a deliberate correction is a new one. Import outcomes use a content-only key (namespace + text), so an identical outcome can never be stored twice.
 - **App B:** the Accountant view uses delegate key B only; the main app uses key A. Both are registered in the account's `delegate_keys` on chain.
 - **Kill switch:** `MEMORY_WRITES_ENABLED=false` puts the app in read-only mode: saved rules still apply and the CSV export still works.
 

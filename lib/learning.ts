@@ -62,3 +62,10 @@ export function latestOutcome(outcomes: StoredOutcome[], wallet: string): Stored
   const mine = outcomes.filter((o) => o.wallet.toLowerCase() === wallet.toLowerCase());
   return mine.sort((a, b) => (a.at < b.at ? 1 : -1))[0] ?? null;
 }
+
+// An import outcome is only worth a new memory when it differs from the latest one for this wallet.
+export function outcomeChanged(latest: Outcome | null, next: Outcome): boolean {
+  if (!latest) return true;
+  return latest.wallet.toLowerCase() !== next.wallet.toLowerCase() || latest.range !== next.range || latest.txs !== next.txs
+    || latest.asked !== next.asked || latest.answered !== next.answered || latest.reused !== next.reused;
+}

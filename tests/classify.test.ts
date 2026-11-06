@@ -174,3 +174,23 @@ test("rule events: saved first, updated when the answer changes, with times and 
   assert.equal(r.ats["0xa"], "2026-11-06T10:05:00Z");
   assert.equal(r.ats["0xb"], "2026-11-06T10:02:00Z");
 });
+
+import { outcomeChanged } from "../lib/learning.ts";
+import { idempotencyKeyFor } from "../lib/rules.ts";
+
+test("an outcome is only written when it differs from the latest one", () => {
+  const o = { wallet: "0xw", range: "2026-07-01..2026-08-24", txs: 11, asked: 0, answered: 0, reused: 5 };
+  assert.equal(outcomeChanged(null, o), true);
+  assert.equal(outcomeChanged({ ...o, wallet: "0xW" }, o), false);          // re-import, nothing changed
+  assert.equal(outcomeChanged({ ...o, reused: 4 }, o), true);
+  assert.equal(outcomeChanged({ ...o, range: "start..2026-06-30" }, o), true);
+});
+
+test("outcome idempotency key comes from the content, so identical outcomes never duplicate", () => {
+  const text = outcomeToText({ wallet: "0xw", range: "a..b", txs: 1, asked: 0, answered: 0, reused: 1 });
+  assert.equal(idempotencyKeyFor("ns", text), idempotencyKeyFor("ns", text));
+  assert.notEqual(idempotencyKeyFor("ns", text), idempotencyKeyFor("ns2", text));
+  assert.notEqual(idempotencyKeyFor("ns", text), idempotencyKeyFor("ns", text.replace("reused=1", "reused=2")));
+  // rules still key on the action id, so a correction is a new memory
+  assert.notEqual(idempotencyKeyFor("ns", "t", "a1"), idempotencyKeyFor("ns", "t", "a2"));
+});

@@ -36,7 +36,7 @@ function usePaletteKey() {
   return k;
 }
 
-export function Header({ wallet, onPalette, accountant }: { wallet?: string; onPalette?: () => void; accountant?: boolean }) {
+export function Header({ wallet, onPalette, accountant, nav }: { wallet?: string; onPalette?: () => void; accountant?: boolean; nav?: ReactNode }) {
   const pk = usePaletteKey();
   return (
     <header className="top">
@@ -46,6 +46,7 @@ export function Header({ wallet, onPalette, accountant }: { wallet?: string; onP
           <span>{accountant ? <>{APP_NAME} for accountants <small>reads with its own key</small></> : APP_NAME}</span>
         </a>
         <span className="top__space" />
+        {nav}
         {wallet && <span className="top__wallet">Wallet <Copyable value={wallet} shown={shortAddr(wallet)} label="Copy wallet" /></span>}
         {onPalette && (
           <button type="button" className="btn btn--quiet no-print palette-btn" onClick={onPalette} aria-label="Open command palette" aria-keyshortcuts="Control+K Meta+K">
