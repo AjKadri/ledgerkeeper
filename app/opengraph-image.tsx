@@ -11,10 +11,9 @@ export default function Image() {
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#F4F6F8", padding: 72, color: "#1C2533" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <svg width="72" height="72" viewBox="0 0 32 32">
-            <rect x="2" y="2" width="28" height="28" rx="6" fill="#1C2533" />
-            <rect x="7" y="9" width="18" height="15" rx="2" fill="#F4F6F8" />
-            <path d="M7 12.5h18" stroke="#1C2533" strokeWidth="1.6" />
-            <path d="M12 18.6l2.6 2.4 5-5.2" fill="none" stroke="#2E6B4F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="6.2" y="12" width="19.6" height="6" fill="#F3D35B" />
+            <rect x="5" y="3" width="22" height="26" rx="3" fill="none" stroke="#1C2533" strokeWidth="2.4" />
+            <path d="M9 9h14M9 15h14M9 22h8" fill="none" stroke="#1C2533" strokeWidth="2.4" strokeLinecap="round" />
           </svg>
           <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: -1 }}>LedgerKeeper</div>
         </div>
