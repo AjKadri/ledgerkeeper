@@ -14,3 +14,8 @@ dist/
 .env*
 ISSUES-DRAFT.md
 AGENTS.md
+
+# drafts awaiting the author's approval (not public until approved)
+docs/blog-draft.md
+docs/social-drafts.md
+docs/form-draft.md
