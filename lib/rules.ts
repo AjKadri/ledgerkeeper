@@ -4,6 +4,7 @@ import type { MemWal } from "@mysten-incubation/memwal";
 import type { Rule } from "./classify";
 import { memoryClient, ruleToText, outcomeToText, type Outcome } from "./memory";
 import { UserError } from "./errors";
+import { boundedSet, OUTAGE_NO_SAVE, type Cached } from "./stale";
 
 export type App = "A" | "B";
 
@@ -15,8 +16,35 @@ export function client(app: App, namespace: string): MemWal {
 
 import { recallWith, type RecallOpts, type RuleSet } from "./recall";
 export type { RuleSet, RecallOpts };
-export const recallRules = (app: App, namespace: string, opts: RecallOpts = {}): Promise<RuleSet> =>
-  recallWith((opts.mem ?? client(app, namespace)) as MemWal, namespace, opts);
+
+// --- outage fallback ---
+// Every complete read is remembered per namespace, with its time. If Walrus Memory cannot be read (recall or
+// listMemories throws), the last good read is returned with `stale` set and saving is refused until a read works
+// again. The cache lives in this server instance's memory, so a cold instance with no read yet has nothing to fall
+// back on and reports the error as before.
+const g = globalThis as unknown as { __lkRules?: Map<string, Cached<RuleSet>>; __lkDown?: Map<string, number>; __lkSim?: { down: boolean } };
+const lastGood = (g.__lkRules ??= new Map<string, Cached<RuleSet>>());
+const downSince = (g.__lkDown ??= new Map<string, number>());
+export const outageSim = (g.__lkSim ??= { down: false });   // flipped only by the development-only /api/dev/outage route
+export const MEMORY_DOWN_FOR_MS = 120_000;
+export const isMemoryDown = (namespace: string) => (downSince.get(namespace) ?? 0) > Date.now() - MEMORY_DOWN_FOR_MS;
+
+export async function recallRules(app: App, namespace: string, opts: RecallOpts = {}): Promise<RuleSet> {
+  try {
+    if (outageSim.down && process.env.NODE_ENV !== "production") throw new Error("simulated Walrus Memory outage");
+    const rs = await recallWith((opts.mem ?? client(app, namespace)) as MemWal, namespace, opts);
+    if (!rs.incomplete) boundedSet(lastGood, namespace, { rs, at: new Date().toISOString() });
+    downSince.delete(namespace);
+    return rs;
+  } catch (e) {
+    const c = lastGood.get(namespace);
+    if (!c) throw e;
+    console.error("memory read failed, serving the last good read:", String((e as Error).message).slice(0, 200));
+    downSince.set(namespace, Date.now());
+    return { ...c.rs, stale: { at: c.at } };
+  }
+}
+export const forgetCachedRules = (namespace?: string) => { if (namespace) { lastGood.delete(namespace); downSince.delete(namespace); } else { lastGood.clear(); downSince.clear(); } };
 
 // --- writes: kill switch and a best-effort hourly cap (per server instance) ---
 const writeLog: number[] = [];
@@ -39,6 +67,7 @@ export function idempotencyKeyFor(namespace: string, text: string, actionId?: st
 async function write(namespace: string, text: string, actionId?: string) {
   const gate = writesAllowed();
   if (!gate.ok) throw new UserError(gate.reason);
+  if (isMemoryDown(namespace)) throw new UserError(`Memory unavailable. ${OUTAGE_NO_SAVE}`);
   const idempotencyKey = idempotencyKeyFor(namespace, text, actionId);
   const res = await client("A", namespace).remember(text, { idempotencyKey });
   writeLog.push(Date.now());

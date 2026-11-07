@@ -8,6 +8,7 @@ export type RuleSet = Resolved & {
   recalled: number;                  // memories recalled (rules + outcomes)
   listed: number;                    // memories listMemories counts in the namespace
   incomplete: boolean;               // recall returned fewer memories than listMemories counts
+  stale?: { at: string };            // set when Walrus Memory could not be read and this is the last good read
 };
 
 const QUERIES = ["tax-rule match label", "[import] wallet range txs asked answered reused"];

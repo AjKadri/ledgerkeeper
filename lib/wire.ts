@@ -26,5 +26,6 @@ export function parseRuleSet(x: unknown): RuleSet {
     updates: arr(o.updates).map((u) => { const q = obj(u); return { match: str(q.match), from: str(q.from), to: str(q.to) }; }),
     outcomes: arr(o.outcomes).map((x2) => { const q = obj(x2); return { wallet: str(q.wallet), range: str(q.range), txs: num(q.txs), asked: num(q.asked), answered: num(q.answered), reused: num(q.reused), blob: str(q.blob), at: str(q.at) }; }),
     recalled: num(o.recalled), listed: num(o.listed), incomplete: o.incomplete === true,
+    ...(o.stale ? { stale: { at: str(obj(o.stale).at, 40) } } : {}),
   };
 }

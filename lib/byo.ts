@@ -13,7 +13,7 @@ export const OWN_NAMESPACE = "ledgerkeeper-rules";
 const CLOCK = "0x0000000000000000000000000000000000000000000000000000000000000006";
 export const MIST = 1_000_000_000;
 
-import { type OwnMemory } from "./byo-store";
+import { ownRulesKey, type OwnMemory } from "./byo-store";
 export type { OwnMemory };
 export type Chain = { packageId: string; registryId: string };
 
@@ -22,7 +22,26 @@ export const relayUrl = () => `${location.origin}/api/relay`;
 export function ownClient(m: OwnMemory): MemWal {
   return memoryClient({ key: m.privateKey, accountId: m.accountId, serverUrl: relayUrl(), namespace: OWN_NAMESPACE });
 }
-export const ownRecall = (m: OwnMemory): Promise<RuleSet> => recallWith(ownClient(m), OWN_NAMESPACE);
+// Outage fallback: the last complete read is kept in this browser (per account). If Walrus Memory cannot be read, that
+// read is returned with `stale` set, and the page turns saving off. Nothing leaves the browser.
+const CACHE = (m: OwnMemory) => ownRulesKey(m.accountId);
+function simulatedOutage() {
+  try { return ["localhost", "127.0.0.1"].includes(location.hostname) && localStorage.getItem("lk-simulate-outage") === "1"; } catch { return false; }
+}
+export async function ownRecall(m: OwnMemory, mem?: Parameters<typeof recallWith>[0]): Promise<RuleSet> {
+  try {
+    if (simulatedOutage()) throw new Error("simulated Walrus Memory outage");
+    const rs = await recallWith(mem ?? ownClient(m), OWN_NAMESPACE);
+    if (!rs.incomplete) { try { localStorage.setItem(CACHE(m), JSON.stringify({ rs, at: new Date().toISOString() })); } catch { /* storage full or blocked: no fallback, nothing else changes */ } }
+    return rs;
+  } catch (e) {
+    let c: { rs: RuleSet; at: string } | null = null;
+    try { c = JSON.parse(localStorage.getItem(CACHE(m)) ?? "null"); } catch { /* unreadable cache */ }
+    if (!c?.rs || !c.at) throw e;
+    return { ...c.rs, stale: { at: c.at } };
+  }
+}
+
 
 async function sha256Hex(s: string) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));

@@ -12,7 +12,7 @@ export type Row = {
 export type DrawerRule = { match: string; value: string; blob: string; at: string };
 export type DrawerOutcome = { range: string; txs: number; asked: number; answered: number; reused: number; at: string; blob: string };
 export type DrawerEvent = { at: string; match: string; kind: "saved" | "updated"; value: string; from?: string; blob: string };
-export type DrawerData = { rules: DrawerRule[]; outcomes: DrawerOutcome[]; events: DrawerEvent[]; listed: number; incomplete: boolean };
+export type DrawerData = { rules: DrawerRule[]; outcomes: DrawerOutcome[]; events: DrawerEvent[]; listed: number; incomplete: boolean; stale: { at: string } | null };
 
 // One answer being saved (or saved, or failed). `filed` = it has flown into the drawer.
 export type SaveState = {
@@ -23,11 +23,11 @@ export type SaveState = {
 export type RawRules = {
   rules: { match: string; label?: string; kind?: string }[]; blobs: Record<string, string>; ats: Record<string, string>;
   outcomes: { range: string; txs: number; asked: number; answered: number; reused: number; at: string; blob: string }[];
-  events: DrawerEvent[]; listed: number; incomplete: boolean;
+  events: DrawerEvent[]; listed: number; incomplete: boolean; stale?: { at: string } | null;
 };
 export const toDrawer = (r: RawRules): DrawerData => ({
   rules: r.rules
     .map((x) => ({ match: x.match, value: x.kind ? `kind:${x.kind}` : `label:${x.label}`, blob: r.blobs[x.match] ?? "", at: r.ats[x.match] ?? "" }))
     .sort((a, b) => (a.at < b.at ? 1 : -1)),
-  outcomes: r.outcomes, events: r.events, listed: r.listed, incomplete: r.incomplete,
+  outcomes: r.outcomes, events: r.events, listed: r.listed, incomplete: r.incomplete, stale: r.stale ?? null,
 });

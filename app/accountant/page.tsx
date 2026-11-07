@@ -6,12 +6,13 @@ import { ago, dates, short } from "@/lib/format";
 import { Header, Section, Trust } from "@/components/Chrome";
 import { Ledger, Skeleton } from "@/components/Ledger";
 import { Copyable } from "@/components/ui";
+import { outageText } from "@/lib/stale";
 import { rangeText } from "@/components/Drawer";
 import type { Row } from "@/components/types";
 
 type Out = {
   rows: number; unknown: number; source: string; cachedAt?: string; ledger: Row[];
-  rules: { count: number; outcomes: number; listed: number; incomplete: boolean; updates: { match: string; from: string; to: string }[] };
+  rules: { stale: { at: string } | null; count: number; outcomes: number; listed: number; incomplete: boolean; updates: { match: string; from: string; to: string }[] };
   rulesList: { match: string; value: string; blob: string; at: string }[];
   outcomes: { range: string; txs: number; asked: number; answered: number; reused: number; at: string; blob: string }[];
 };
@@ -65,6 +66,7 @@ function View() {
                   <p className="small muted" style={{ marginTop: 16 }}>
                     Data: {out.source === "cached" ? `cached at ${out.cachedAt}` : "live from Tatum"}. Memory holds <span className="num">{out.rules.listed}</span> memories in total. USD value covers SUI legs only and is approximate (on-chain pool price, Cetus SUI/USDC); other coins are left blank.
                   </p>
+                  {out.rules.stale && <div className="banner banner--warn" role="status" style={{ marginTop: 16 }}><b>{outageText(out.rules.stale)}</b> The labels and the CSV below use those rules. This report is read-only, so nothing is being saved from here.</div>}
                   {out.rules.incomplete && <div className="banner banner--bad" role="alert" style={{ marginTop: 16 }}><b>Memory returned fewer items than it holds.</b> Reload before trusting this export.</div>}
                   {out.rules.updates.map((u) => <p key={u.match} className="small" style={{ marginTop: 8, color: "var(--green)" }}>Rule <span className="mono">{short(u.match)}</span> was updated from {friendly(u.from, u.match)} to {friendly(u.to, u.match)}.</p>)}
                   <p className="no-print" style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>

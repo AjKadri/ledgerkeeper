@@ -8,6 +8,7 @@ import { recallRules, writesAllowed, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
 import { USD_BASIS } from "./price";
 import { parseRuleSet } from "./wire";
+import { OUTAGE_NO_SAVE } from "./stale";
 
 export { UserError };
 
@@ -81,10 +82,11 @@ export async function runImport(body: any) {
     updates: rs.updates,
     usd, answeredFromMemory, rows: ledger,
     drawer: {
-      rules: rs.rules, blobs: rs.blobs, ats: rs.ats, events: rs.events, listed: rs.listed, incomplete: rs.incomplete,
+      rules: rs.rules, blobs: rs.blobs, ats: rs.ats, events: rs.events, listed: rs.listed, incomplete: rs.incomplete, stale: rs.stale ?? null,
       outcomes: rs.outcomes.map((o) => ({ range: o.range, txs: o.txs, asked: o.asked, answered: o.answered, reused: o.reused, at: o.at, blob: o.blob })),
     },
-    writes: own ? { ok: true } : writesAllowed(),
+    stale: rs.stale ?? null,
+    writes: rs.stale ? { ok: false, reason: `Memory unavailable. ${OUTAGE_NO_SAVE}` } : own ? { ok: true } : writesAllowed(),
     memoryStats: { rules: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, recalled: rs.recalled, incomplete: rs.incomplete },
   };
 }
@@ -97,7 +99,7 @@ export async function runExport(app: App, body: { address: unknown; namespace: u
   const rows = toRows(hist.txs, address, rs.rules);
   return {
     csv: toCsv(rows), rows: rows.length, source: hist.source, cachedAt: hist.cachedAt,
-    rules: { count: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, updates: rs.updates, blobs: rs.blobs },
+    rules: { stale: rs.stale ?? null, count: rs.rules.length, outcomes: rs.outcomes.length, listed: rs.listed, incomplete: rs.incomplete, conflicts: rs.conflicts, updates: rs.updates, blobs: rs.blobs },
     unknown: rows.filter((r) => r.label === "unknown").length,
     ledger: rows,
     rulesList: rs.rules.map((r) => ({ match: r.match, value: ruleValue(r), blob: rs.blobs[r.match] ?? "", at: rs.ats[r.match] ?? "" })),

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { checkAddress } from "@/lib/address";
 import { friendly, ruleFromValue } from "@/lib/answers";
 import { forgetOwn, loadOwn, type OwnMemory } from "@/lib/byo-store";
+import { outageText, OUTAGE_NO_SAVE } from "@/lib/stale";
 // The wallet, SDK and chain code is only loaded when own-memory mode is used.
 const byo = () => import("@/lib/byo");
 import { fly } from "@/lib/fly";
@@ -28,6 +29,7 @@ type ImportResult = {
   usd: { basis: string; priced: number; of: number; received: number; sent: number };
   answeredFromMemory: FromMemory[]; rows: Row[]; drawer: RawRules;
   writes: { ok: boolean; reason?: string };
+  stale: { at: string } | null;
   memoryStats: { rules: number; outcomes: number; listed: number; incomplete: boolean };
 };
 
@@ -286,9 +288,10 @@ export default function Home() {
   // ---------- derived ----------
   const addr = checkAddress(address);
   const c = res?.counts;
-  const readOnly = !usingOwn && !writes.ok;
+  const stale = drawer?.stale ?? null;                       // Walrus Memory unreadable: showing the last good read
+  const readOnly = !usingOwn && !writes.ok && !stale;
   const incomplete = !!res?.memoryStats.incomplete || !!drawer?.incomplete;
-  const canSave = (usingOwn || writes.ok) && !incomplete;
+  const canSave = (usingOwn || writes.ok) && !incomplete && !stale;
   const exportHref = res ? `/api/export?as=A&address=${res.address}&namespace=${session}` : "#";
   const accountantHref = usingOwn ? "#" : res ? `/accountant?address=${res.address}&ns=${session}` : "#";
   const questions = res?.questions ?? [];
@@ -393,6 +396,11 @@ export default function Home() {
       <Header wallet={res?.address} onPalette={() => setPalette(true)} />
       <div className="shell layout">
         <main className="main" aria-busy={busy}>
+          {stale && (
+            <div className="banner banner--warn" role="status">
+              <b>{outageText(stale)}</b> {OUTAGE_NO_SAVE}
+            </div>
+          )}
           {readOnly && (
             <div className="banner banner--warn" role="status">
               <b>Read-only mode.</b> {writes.reason ?? "Memory writes are switched off."} Rules already saved are still applied and the export works, but new answers cannot be saved right now.
@@ -588,7 +596,7 @@ export default function Home() {
 
         </main>
 
-        <Drawer data={drawer} saves={saves} writesOn={writes.ok} writesReason={writes.reason} session={session} ownLabel={usingOwn ? own!.accountId : undefined} onStartOver={newSession} editing={editing} setEditing={setEditing}
+        <Drawer data={drawer} saves={saves} writesOn={writes.ok && !stale} writesReason={stale ? "Memory unavailable, saving is off." : writes.reason} session={session} ownLabel={usingOwn ? own!.accountId : undefined} onStartOver={newSession} editing={editing} setEditing={setEditing}
           onChange={(m, v) => save(m, v, true)} open={sheet} onClose={() => setSheet(false)} pulse={pulse} loading={drawerLoading} />
       </div>
 
