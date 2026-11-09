@@ -5,7 +5,7 @@ import { demoSample, DEMO_MATCH } from "../lib/demo-sample.ts";
 
 // The product-page demo must save nothing: its client code (and everything it imports) has no network call,
 // no API route and no memory client.
-const CLIENT_FILES = ["components/Demo.tsx", "components/QuestionCard.tsx", "components/Ledger.tsx", "components/ui.tsx", "components/types.ts", "lib/answers.ts", "lib/format.ts"];
+const CLIENT_FILES = ["components/Demo.tsx", "components/Motion.tsx", "components/QuestionCard.tsx", "components/Ledger.tsx", "components/ui.tsx", "components/types.ts", "lib/answers.ts", "lib/format.ts"];
 
 test("demo client code makes no network calls and imports no memory code", () => {
   for (const f of CLIENT_FILES) {

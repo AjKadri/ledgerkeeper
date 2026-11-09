@@ -2,6 +2,7 @@ import { APP_NAME } from "@/lib/config";
 import { Header, Trust } from "@/components/Chrome";
 import { HeroForm } from "@/components/HeroForm";
 import { Demo } from "@/components/Demo";
+import { Motion } from "@/components/Motion";
 import { demoSample } from "@/lib/demo-sample";
 
 export const metadata = {
@@ -35,6 +36,7 @@ export default function Product() {
   return (
     <>
       <Header nav={<nav className="sitenav" aria-label="Page sections"><a href="#how">How it works</a><a href="#memory">Memory</a><a href="#faq">FAQ</a><a className="btn btn--dark" href="/app">Open the app</a></nav>} />
+      <Motion />
       <main id="top">
         <section className="pp pp--hero">
           <div className="shell">
@@ -108,7 +110,7 @@ export default function Product() {
             <p className="pp__lead" style={{ marginTop: 12 }}>After each import LedgerKeeper stores how it went.</p>
             <ol className="ntl" aria-label="Imports of the sample wallet recorded in memory">
               <li><b>Up to 30 Jun</b><span>5 asked, 5 answered.</span></li>
-              <li><b>Jul–Aug</b><span>3 asked, 3 answered, <span className="mark mark--night">2 reused from memory</span>.</span></li>
+              <li><b>Jul–Aug</b><span>3 asked, 3 answered, <span className="mark mark--night"><span className="num" data-count="2">2</span> reused from memory</span>.</span></li>
             </ol>
           </div>
         </section>

@@ -857,3 +857,16 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
   .pp { padding: 72px 0; }
   .pp--hero { padding: 48px 0 40px; }
 }
+
+/* ---------- landing motion (/ only; added by components/Motion.tsx, never under reduced motion) ---------- */
+.ntl { position: relative; padding-left: 20px; }
+.ntl::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--marker); transform-origin: top; }
+.js-motion main .pp { opacity: 0; transform: translateY(8px); transition: opacity 400ms ease-out, transform 400ms ease-out; }
+.js-motion main .pp.in { opacity: 1; transform: none; }
+.js-motion main .pp .mark--night { background-size: 0% 100%; background-repeat: no-repeat; transition: background-size 500ms ease-out 250ms; }
+.js-motion main .pp.in .mark--night { background-size: 100% 100%; }
+.js-motion main .ntl::before { transform: scaleY(0); transition: transform 700ms ease-out 200ms; }
+.js-motion main .pp.in .ntl::before { transform: scaleY(1); }
+.btn--pill-sm { min-height: 28px; padding: 2px 12px; font-size: var(--t-14); margin-left: 8px; vertical-align: middle; }
+.demo--flash .ledger tbody tr:nth-child(-n + 2) td { animation: rowflash 1100ms ease-out 1; }
+@keyframes rowflash { 0%, 35% { background: var(--marker-swipe); } 100% { background: transparent; } }
