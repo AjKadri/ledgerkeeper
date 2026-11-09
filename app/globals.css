@@ -806,3 +806,9 @@ select.field, input.field--text { border-radius: var(--r-pill); padding: 6px 14p
 main [id], .pp[id] { scroll-margin-top: 88px; }
 .pp--hero .hero__actions .small { flex-basis: 100%; text-align: center; }
 .pp--hero .hint { text-align: center; }
+@media (max-width: 640px) {
+  .seg { flex-wrap: nowrap; }
+  .seg__opt { padding: 4px 12px; white-space: nowrap; }
+  .stepper li { border-radius: 14px; }
+}
+@media (max-width: 360px) { .seg__opt { padding: 4px 8px; font-size: 0.8125rem; } }
