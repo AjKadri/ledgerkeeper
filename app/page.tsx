@@ -70,7 +70,7 @@ export default function Product() {
             <p className="pp__lead" style={{ marginTop: 12 }}>Each answer is a short rule in Walrus Memory on mainnet, and any app you give a key can read it.</p>
             <div className="rulecard">
               <CopyButton value={RULE_TEXT} label="Copy the stored rule text" className="copy-rule" />
-              <pre className="rule-text" tabIndex={0}><code>{ruleHead}<span className="mark mark--night">kind=exchange</span>{ruleTail}</code></pre>
+              <pre className="rule-text" tabIndex={0}><code>{ruleHead}<span className="mark">kind=exchange</span>{ruleTail}</code></pre>
               <p className="rulecard__meta">One memory per answer; the newest wins.</p>
               <p className="rulecard__meta">Written with one delegate key, read by the accountant app with a second. Neither holds your wallet keys.</p>
               <details className="rulecard__more">
@@ -113,7 +113,7 @@ export default function Product() {
             <p className="pp__lead" style={{ marginTop: 12 }}>After each import LedgerKeeper stores how it went.</p>
             <ol className="ntl" aria-label="Imports of the sample wallet recorded in memory">
               <li><b>Up to 30 Jun</b><span>5 asked, 5 answered.</span></li>
-              <li><b>Jul–Aug</b><span>3 asked, 3 answered, <span className="mark mark--night"><span className="num" data-count="2">2</span> reused from memory</span>.</span></li>
+              <li><b>Jul–Aug</b><span>3 asked, 3 answered, <span className="mark"><span className="num" data-count="2">2</span> reused from memory</span>.</span></li>
             </ol>
           </div>
         </section>

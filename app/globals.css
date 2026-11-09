@@ -12,6 +12,10 @@
   --green-tint: rgba(46, 107, 79, 0.12);
   --marker: #f3d35b;
   --marker-swipe: #f3d35b;
+  /* underline (replaces the filled marker band): deeper gold on light, marker on navy/dark */
+  --underline: #b88e00;
+  --u-thick: 3px;
+  --u-lift: 0.02em;
   --brick: #b4412f;
   --teal: #0e5e63;
   --accent: var(--ink);
@@ -63,6 +67,7 @@
   --green: #6cbe93;
   --green-tint: rgba(108, 190, 147, 0.16);
   --marker-swipe: rgba(243, 211, 91, 0.3);
+  --underline: #f3d35b;
   --brick: #ee8a77;
   --teal: #58bbc0;
   --night: #080d14;
@@ -93,6 +98,7 @@
     --green: #6cbe93;
     --green-tint: rgba(108, 190, 147, 0.16);
     --marker-swipe: rgba(243, 211, 91, 0.3);
+    --underline: #f3d35b;
     --brick: #ee8a77;
     --teal: #58bbc0;
     --night: #080d14;
@@ -147,11 +153,12 @@ a:hover { text-decoration-color: currentColor; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
 .app-b :focus-visible { outline-color: var(--teal); }
 
-/* highlighter: a swipe behind short text, never a fill for an area */
+/* emphasis: a gold underline under short text (marker on navy), never a fill */
 .mark {
-  background: linear-gradient(transparent 52%, var(--marker-swipe) 52%, var(--marker-swipe) 94%, transparent 94%);
-  padding: 0 3px;
-  margin: 0 -3px;
+  background-image: linear-gradient(var(--underline), var(--underline));
+  background-repeat: no-repeat;
+  background-size: 100% var(--u-thick);
+  background-position: 0 calc(100% - var(--u-lift));
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
@@ -341,7 +348,7 @@ input.field--text { font-family: inherit; min-height: 40px; padding: 6px 10px; w
 .ledger td[data-c="date"], .ledger td[data-c="rule"], .ledger td[data-c="usd"], .ledger td[data-c="cp"] { white-space: nowrap; }
 .ledger tr:last-child td { border-bottom: 0; }
 .ledger .r { text-align: right; }
-.ledger tr[data-unknown="true"] .lab span.t { background: linear-gradient(transparent 52%, var(--marker-swipe) 52%, var(--marker-swipe) 94%, transparent 94%); padding: 0 3px; margin: 0 -3px; }
+.ledger tr[data-unknown="true"] .lab span.t { background-image: linear-gradient(var(--underline), var(--underline)); background-repeat: no-repeat; background-size: 100% var(--u-thick); background-position: 0 calc(100% - var(--u-lift)); }
 .tag { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-weight: 600; font-size: var(--t-14); }
 .tag button { appearance: none; border: 0; background: transparent; font: inherit; color: inherit; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
 .tag button:hover { text-decoration-color: currentColor; }
@@ -706,7 +713,8 @@ select.field, input.field--text { border-radius: var(--r-pill); padding: 6px 14p
 .night .btn { background: var(--on-night); color: var(--night); border-color: var(--on-night); }
 .night .btn:hover:not(:disabled) { border-color: var(--on-night); filter: brightness(0.95); }
 .night :focus-visible { outline-color: var(--marker); }
-.mark--night { color: var(--night); background: linear-gradient(transparent 8%, var(--marker) 8%, var(--marker) 92%, transparent 92%); }
+.night .mark { --underline: var(--marker); color: var(--on-night); }
+.mark .copy button { border-bottom: 0; }
 
 /* ---------- product page v3 ---------- */
 .pp + .pp { border-top: 0; }
@@ -806,9 +814,6 @@ select.field, input.field--text { border-radius: var(--r-pill); padding: 6px 14p
   .band h1, .band p, .band .chip { color: #111 !important; }
   .card, .ledger-wrap, .banner { box-shadow: none !important; border-radius: 0; }
 }
-.night .mark--night, .night .ntl .mark--night { color: var(--night); }
-:root[data-theme="dark"] .night .mark--night { color: #1c2533; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .night .mark--night { color: #1c2533; } }
 main [id], .pp[id] { scroll-margin-top: 88px; }
 .pp--hero .hero__actions .small { flex-basis: 100%; text-align: center; }
 .pp--hero .hint { text-align: center; }
@@ -863,8 +868,8 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 .ntl::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--marker); transform-origin: top; }
 .js-motion main .pp { opacity: 0; transform: translateY(8px); transition: opacity 400ms ease-out, transform 400ms ease-out; }
 .js-motion main .pp.in { opacity: 1; transform: none; }
-.js-motion main .pp .mark--night { background-size: 0% 100%; background-repeat: no-repeat; transition: background-size 500ms ease-out 250ms; }
-.js-motion main .pp.in .mark--night { background-size: 100% 100%; }
+.js-motion main .pp .mark { background-size: 0% var(--u-thick); transition: background-size 500ms ease-out 250ms; }
+.js-motion main .pp.in .mark { background-size: 100% var(--u-thick); }
 .js-motion main .ntl::before { transform: scaleY(0); transition: transform 700ms ease-out 200ms; }
 .js-motion main .pp.in .ntl::before { transform: scaleY(1); }
 .btn--pill-sm { min-height: 28px; padding: 2px 12px; font-size: var(--t-14); margin-left: 8px; vertical-align: middle; }
@@ -890,3 +895,5 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 @media (prefers-reduced-motion: reduce) { .cards3 li:hover, .limits3 details:hover, .faq details:hover { transform: none; } }
 .copy .btn--night-sm { font-family: var(--font-ui), system-ui, sans-serif; font-size: var(--t-14); border: 1px solid var(--night-line) !important; padding: 2px 12px; cursor: pointer; }
 .copy .btn--night-sm:hover { border-color: var(--on-night-muted) !important; }
+
+@media (max-width: 640px) { :root { --u-thick: 2px; } }
