@@ -101,7 +101,7 @@ export default function Product() {
                 <img src="/product/step-hand.png" width="1156" height="526" loading="lazy" alt="The accountant view: the report header, its counts and a Download CSV button." />
                 <h3><span>3</span> Hand over</h3>
                 <p>Send a labelled CSV, or open the accountant view, which reads your rules with its own key.</p>
-                <p className="cards3__cta"><span className="small muted">See the CSV your accountant gets</span> <a className="btn btn--pill-sm" href="/sample.csv" download>Sample CSV, from the demo memory as of 9 Nov</a></p>
+                <p className="cards3__cta"><span className="small muted">See the CSV your accountant gets</span> <a className="btn btn--pill-sm" href="/sample.csv" download>Sample CSV</a></p>
               </li>
             </ol>
           </div>
