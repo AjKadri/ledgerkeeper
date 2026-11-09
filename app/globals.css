@@ -897,3 +897,11 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 .copy .btn--night-sm:hover { border-color: var(--on-night-muted) !important; }
 
 @media (max-width: 640px) { :root { --u-thick: 2px; } }
+/* demo accountant frame: no Rule column and tighter cells so the table fits its frame (demo only) */
+.frame--b .ledger thead th:nth-child(5), .frame--b .ledger td[data-c="rule"] { display: none; }
+.frame--b .ledger th, .frame--b .ledger td { padding: 8px 8px; }
+.frame--b .ledger { font-size: 0.8125rem; }
+.frame--b .frame__body { padding: 12px; }
+.demo { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); }
+@media (max-width: 1023px) { .demo { grid-template-columns: minmax(0, 1fr); } }
+.frame--b .lab { white-space: normal; }
