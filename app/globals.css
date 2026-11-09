@@ -905,3 +905,5 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 .demo { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); }
 @media (max-width: 1023px) { .demo { grid-template-columns: minmax(0, 1fr); } }
 .frame--b .lab { white-space: normal; }
+.outcome-line { margin-top: 10px; font-size: var(--t-14); max-width: 70ch; }
+.outcome-line b { font-weight: 650; }

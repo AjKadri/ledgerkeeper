@@ -525,6 +525,15 @@ export default function Home() {
                     </p>
 
 
+                    {res.previousOutcome ? (
+                      <p className="outcome-line">
+                        {res.previousOutcome.asked === 0
+                          ? <>Last time ({rangeText(res.previousOutcome.range)}) everything was answered from memory, <b className="num">{res.previousOutcome.reused}</b> reused.</>
+                          : <>Last time ({rangeText(res.previousOutcome.range)}) you answered <b className="num">{res.previousOutcome.answered}</b> of <span className="num">{res.previousOutcome.asked}</span> questions.</>}{" "}
+                        This time: <b className="num">{c.on.new}</b> new question{c.on.new === 1 ? "" : "s"}, <b className="num">{res.reused}</b> reused from memory.{" "}
+                        <span className="small muted">From your import outcome memory.</span>
+                      </p>
+                    ) : <p className="outcome-line muted">No earlier import is recorded in this memory yet.</p>}
                     <div className="compare">
                       <Segmented label="Show this import" value={memory ? "on" : "off"} onChange={switchMemory} disabled={busy}
                         options={[{ value: "on", text: "With your memory" }, { value: "off", text: "Without it" }]} />
@@ -535,15 +544,6 @@ export default function Home() {
                       <summary>How we count</summary>
                       <div>
                     <p className="small muted">Questions you&rsquo;d have answered again: <span className="num">{c.on.repeat}</span> with your memory / <span className="num">{c.off.repeat}</span> without it</p>
-                    {res.previousOutcome ? (
-                      <p className="last">
-                        {res.previousOutcome.asked === 0
-                          ? <>Last time ({rangeText(res.previousOutcome.range)}) everything was answered from memory, <b className="num">{res.previousOutcome.reused}</b> reused.</>
-                          : <>Last time ({rangeText(res.previousOutcome.range)}) you answered <b className="num">{res.previousOutcome.answered}</b> of <span className="num">{res.previousOutcome.asked}</span> questions.</>}{" "}
-                        This time: <b className="num">{c.on.new}</b> new question{c.on.new === 1 ? "" : "s"}, <b className="num">{res.reused}</b> reused from memory.{" "}
-                        <span className="small muted">From your import outcome memory.</span>
-                      </p>
-                    ) : <p className="small muted">No earlier import is recorded in this memory yet.</p>}
                         {res.usd.priced > 0 && !busy && (
                   <p className="usd">
                     <Tip text="Approximate. SUI amounts valued at the Cetus SUI/USDC pool price at that time. Other coins are not valued."><b>USD value of SUI legs</b></Tip> (approximate, on-chain pool price): received <b className="num">{usdFmt(res.usd.received)}</b>, sent <b className="num">{usdFmt(Math.abs(res.usd.sent))}</b> across <span className="num">{res.usd.priced}</span> of <span className="num">{res.usd.of}</span> transactions. Other coins (for example CETUS) are not valued.
