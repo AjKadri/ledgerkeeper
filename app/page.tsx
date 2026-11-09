@@ -81,7 +81,7 @@ export default function Product() {
           </div>
         </section>
 
-        <section className="pp pp--center night night--green" aria-labelledby="learn-h" style={{ ["--lit" as string]: 9 }}>
+        <section className="pp pp--center night" aria-labelledby="learn-h" style={{ ["--lit" as string]: 9 }}>
           <div className="shell">
             <h2 id="learn-h">What the memory learns</h2>
             <p className="pp__lead" style={{ marginTop: 12 }}>After each import LedgerKeeper stores how it went. The second import of the sample wallet asked three new questions and reused two answers from memory. If you change an answer, the newest one wins.</p>
