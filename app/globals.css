@@ -886,8 +886,6 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 .cards3 li:hover, .limits3 details:hover, .faq details:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(28, 37, 51, 0.05), 0 14px 30px -14px rgba(28, 37, 51, 0.22); }
 .faq details > p, .limits3 details > p { animation: open 180ms ease-out; }
 @keyframes open { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-.cards3__cta { margin-top: 14px !important; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.cards3__cta .btn--pill-sm { margin-left: 4px; }
 .rulecard { position: relative; }
 .rulecard .copy-rule { position: absolute; top: 12px; right: 12px; }
 .rulecard .rule-text { padding-right: 72px; }

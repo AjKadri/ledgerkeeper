@@ -5,14 +5,14 @@ import { Demo } from "@/components/Demo";
 import { Motion } from "@/components/Motion";
 import { CopyButton } from "@/components/ui";
 import { demoSample } from "@/lib/demo-sample";
-import { SAMPLE_RULE_TEXT } from "@/lib/sample-csv";
 
 export const metadata = {
   title: `${APP_NAME}: Sui records for your accountant, answered once`,
   description: "LedgerKeeper labels your Sui transactions for your accountant and asks each unclear question once. Your answers live in your Walrus Memory, not in one app.",
 };
 
-const RULE_TEXT = SAMPLE_RULE_TEXT;
+// The text of a real rule, as stored in Walrus Memory by the sample run.
+const RULE_TEXT = "[tax-rule] match=0x60956e40d8f921affde3cb861de91a6a6a0bab28af7cd1c23e029d46b86a449b kind=exchange v=2";
 
 const LIMITS: { t: string; d: string }[] = [
   { t: "History from 23 Jan 2026", d: "History starts on 23 Jan 2026, the earliest Tatum serves for Sui, and covers a wallet\u2019s newest 500 transactions." },
@@ -101,7 +101,6 @@ export default function Product() {
                 <img src="/product/step-hand.png" width="1156" height="526" loading="lazy" alt="The accountant view: the report header, its counts and a Download CSV button." />
                 <h3><span>3</span> Hand over</h3>
                 <p>Send a labelled CSV, or open the accountant view, which reads your rules with its own key.</p>
-                <p className="cards3__cta"><span className="small muted">See the CSV your accountant gets</span> <a className="btn btn--pill-sm" href="/sample.csv" download>Sample CSV</a></p>
               </li>
             </ol>
           </div>
