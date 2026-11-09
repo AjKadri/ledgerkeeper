@@ -72,3 +72,6 @@ export function amountLines(text: string, sign: "+" | "\u2212"): { text: string;
     return { text: `${sign}${n.toLocaleString("en-US", { maximumFractionDigits: digits })} ${m[2]}`, full: seg };
   });
 }
+
+// "1 call" / "2 calls", "1 transfer" / "2 transfers".
+export const countNoun = (n: number, contract: boolean) => (contract ? (n === 1 ? "call" : "calls") : n === 1 ? "transfer" : "transfers");

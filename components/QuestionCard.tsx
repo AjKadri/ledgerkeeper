@@ -1,7 +1,7 @@
 "use client";
 import { forwardRef, useEffect, useRef, type KeyboardEvent } from "react";
 import { friendly, optionsFor, isContractKey } from "@/lib/answers";
-import { dates, day, short } from "@/lib/format";
+import { countNoun, dates, day, short } from "@/lib/format";
 import { Copyable, IconCheck, Steps } from "./ui";
 import type { FromMemory, Question, SaveState } from "./types";
 
@@ -50,7 +50,7 @@ export const QuestionCard = forwardRef<HTMLDivElement, Props>(function QuestionC
     return (
       <div ref={ref} className="q q--done q--filed" data-qcard data-qkey={q.key} tabIndex={0} aria-label={`Filed: ${q.question}`}>
         <span className="q__tag q__tag--ok"><IconCheck /> Filed to memory</span>{" "}
-        <span className="small muted">{q.count} {contract ? "calls" : "transfers"} · {short(q.key)} is {friendly(save!.value, q.key).toLowerCase()}</span>
+        <span className="small muted">{q.count} {countNoun(q.count, contract)} · {short(q.key)} is {friendly(save!.value, q.key).toLowerCase()}</span>
       </div>
     );
   }

@@ -58,7 +58,7 @@ test("A and B build the same CSV from the same rules (USD included)", () => {
   assert.equal(toCsv(toRows(f.txs, f.wallet, [])), toCsv(toRows(f.txs, f.wallet, [])));
 });
 
-import { amountLines, short, ago, dates } from "../lib/format.ts";
+import { amountLines, short, ago, dates, countNoun } from "../lib/format.ts";
 
 test("display formatting trims long decimals but keeps the full value for the tooltip and the CSV", () => {
   assert.deepEqual(amountLines("775.65751487 SUI", "+"), [{ text: "+775.658 SUI", full: "775.65751487 SUI" }]);
@@ -75,4 +75,12 @@ test("short addresses, dates and times", () => {
   const now = Date.parse("2026-11-06T12:00:00Z");
   assert.equal(ago("2026-11-06T11:58:00Z", now), "2 min ago");
   assert.equal(ago("2026-11-06T11:59:50Z", now), "just now");
+});
+
+test("counts are pluralised: 1 call, 2 calls, 1 transfer, 2 transfers", () => {
+  assert.equal(`1 ${countNoun(1, true)}`, "1 call");
+  assert.equal(`2 ${countNoun(2, true)}`, "2 calls");
+  assert.equal(`1 ${countNoun(1, false)}`, "1 transfer");
+  assert.equal(`2 ${countNoun(2, false)}`, "2 transfers");
+  assert.equal(`0 ${countNoun(0, true)}`, "0 calls");
 });
