@@ -42,6 +42,25 @@ export function Copyable({ value, shown, label }: { value: string; shown: string
   );
 }
 
+// A small "Copy" pill for a block of text, with the same "Copied" tooltip.
+export function CopyButton({ value, label, className }: { value: string; label: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  const t = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
+  async function copy() {
+    try { await navigator.clipboard.writeText(value); } catch { return; }
+    setCopied(true);
+    if (t.current) clearTimeout(t.current);
+    t.current = setTimeout(() => setCopied(false), 1400);
+  }
+  return (
+    <span className={`copy ${className ?? ""}`}>
+      <button type="button" className="btn btn--night-sm" onClick={copy} aria-label={label}>Copy</button>
+      {copied && <span className="copy-tip" role="status" style={{ left: "50%", top: 0 }}>Copied</span>}
+    </span>
+  );
+}
+
 // ---------- segmented control (radiogroup, arrow keys) ----------
 export function Segmented<T extends string>({ label, options, value, onChange, disabled }: {
   label: string; options: { value: T; text: ReactNode; disabled?: boolean }[]; value: T; onChange: (v: T) => void; disabled?: boolean;

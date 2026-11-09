@@ -4,6 +4,22 @@
 import { useEffect } from "react";
 
 export function Motion() {
+  // Current section in the nav (not motion, so it also runs under reduced motion).
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) return;
+    const links = new Map([...document.querySelectorAll<HTMLAnchorElement>(".sitenav a[href^='#']")].map((a) => [a.hash.slice(1), a]));
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const a = links.get(e.target.id);
+        if (!a) continue;
+        if (e.isIntersecting) { links.forEach((l) => l.removeAttribute("aria-current")); a.setAttribute("aria-current", "true"); }
+        else if (a.getAttribute("aria-current")) a.removeAttribute("aria-current");
+      }
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+    return () => io.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const root = document.documentElement;

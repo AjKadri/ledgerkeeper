@@ -3,15 +3,16 @@ import { Header, Trust } from "@/components/Chrome";
 import { HeroForm } from "@/components/HeroForm";
 import { Demo } from "@/components/Demo";
 import { Motion } from "@/components/Motion";
+import { CopyButton } from "@/components/ui";
 import { demoSample } from "@/lib/demo-sample";
+import { SAMPLE_RULE_TEXT } from "@/lib/sample-csv";
 
 export const metadata = {
   title: `${APP_NAME}: Sui records for your accountant, answered once`,
   description: "LedgerKeeper labels your Sui transactions for your accountant and asks each unclear question once. Your answers live in your Walrus Memory, not in one app.",
 };
 
-// The text of a real rule, as stored in Walrus Memory by the sample run (see docs/shots/v2).
-const RULE_TEXT = "[tax-rule] match=0x60956e40d8f921affde3cb861de91a6a6a0bab28af7cd1c23e029d46b86a449b kind=exchange v=2";
+const RULE_TEXT = SAMPLE_RULE_TEXT;
 
 const LIMITS: { t: string; d: string }[] = [
   { t: "History from 23 Jan 2026", d: "History starts on 23 Jan 2026, the earliest Tatum serves for Sui, and covers a wallet\u2019s newest 500 transactions." },
@@ -68,6 +69,7 @@ export default function Product() {
             <h2 id="mem-h">Your answers aren&rsquo;t stuck in one app.</h2>
             <p className="pp__lead" style={{ marginTop: 12 }}>Each answer is a short rule in Walrus Memory on mainnet, and any app you give a key can read it.</p>
             <div className="rulecard">
+              <CopyButton value={RULE_TEXT} label="Copy the stored rule text" className="copy-rule" />
               <pre className="rule-text" tabIndex={0}><code>{ruleHead}<span className="mark mark--night">kind=exchange</span>{ruleTail}</code></pre>
               <p className="rulecard__meta">One memory per answer; the newest wins.</p>
               <p className="rulecard__meta">Written with one delegate key, read by the accountant app with a second. Neither holds your wallet keys.</p>
@@ -99,6 +101,7 @@ export default function Product() {
                 <img src="/product/step-hand.png" width="592" height="226" loading="lazy" alt="The accountant view with a labelled ledger and a Download CSV button." />
                 <h3><span>3</span> Hand over</h3>
                 <p>Send a labelled CSV, or open the accountant view, which reads your rules with its own key.</p>
+                <p className="cards3__cta"><span className="small muted">See the CSV your accountant gets</span> <a className="btn btn--pill-sm" href="/sample.csv" download>Sample CSV</a></p>
               </li>
             </ol>
           </div>

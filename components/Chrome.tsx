@@ -38,8 +38,14 @@ function usePaletteKey() {
 
 export function Header({ wallet, onPalette, accountant, nav }: { wallet?: string; onPalette?: () => void; accountant?: boolean; nav?: ReactNode }) {
   const pk = usePaletteKey();
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 8);
+    on(); window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
   return (
-    <header className="top">
+    <header className="top" data-scrolled={scrolled}>
       <div className="shell top__in">
         <a className="brand" href="/" aria-label={`${APP_NAME} home`}>
           <Mark />

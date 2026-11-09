@@ -627,7 +627,7 @@ select.field, input.field--text { border-radius: var(--r-pill); padding: 6px 14p
 .app-b .top { border-bottom: 0; }
 .top__in {
   pointer-events: auto; max-width: 1080px; min-height: 56px; padding: 0 8px 0 18px; border-radius: var(--r-pill);
-  background: var(--nav-bg); border: 1px solid var(--rule); box-shadow: var(--shadow);
+  background: var(--nav-bg); border: 1px solid var(--rule); box-shadow: none; transition: box-shadow 200ms ease;
   -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px);
 }
 .brand svg { width: 26px; height: 26px; }
@@ -870,3 +870,23 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 .btn--pill-sm { min-height: 28px; padding: 2px 12px; font-size: var(--t-14); margin-left: 8px; vertical-align: middle; }
 .demo--flash .ledger tbody tr:nth-child(-n + 2) td { animation: rowflash 1100ms ease-out 1; }
 @keyframes rowflash { 0%, 35% { background: var(--marker-swipe); } 100% { background: transparent; } }
+
+/* nav: shadow after scrolling, current section on / */
+.top[data-scrolled="true"] .top__in { box-shadow: 0 1px 2px rgba(15, 22, 32, 0.06), 0 10px 28px -12px rgba(15, 22, 32, 0.28); }
+.sitenav a[aria-current="true"]:not(.btn) { color: var(--ink); text-decoration: underline; text-decoration-color: var(--marker); text-decoration-thickness: 3px; text-underline-offset: 6px; }
+/* microinteractions (~120ms) */
+.btn, .choice, .seg__opt, .facts li { transition: background-color 120ms, border-color 120ms, transform 120ms, filter 120ms, box-shadow 120ms; }
+.btn:active:not(:disabled), .choice:active:not(:disabled), .seg__opt:active:not(:disabled) { transform: scale(0.97); }
+.cards3 li, .softlist li, .limits3 details, .faq details, .final > div, .app-start .howto > div { transition: transform 120ms ease, box-shadow 120ms ease; }
+.cards3 li:hover, .limits3 details:hover, .faq details:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(28, 37, 51, 0.05), 0 14px 30px -14px rgba(28, 37, 51, 0.22); }
+.faq details > p, .limits3 details > p { animation: open 180ms ease-out; }
+@keyframes open { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.cards3__cta { margin-top: 14px !important; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cards3__cta .btn--pill-sm { margin-left: 4px; }
+.rulecard { position: relative; }
+.rulecard .copy-rule { position: absolute; top: 12px; right: 12px; }
+.rulecard .rule-text { padding-right: 72px; }
+.btn--night-sm { min-height: 28px; padding: 2px 12px; font-size: var(--t-14); background: transparent !important; color: var(--on-night) !important; border-color: var(--night-line) !important; }
+@media (prefers-reduced-motion: reduce) { .cards3 li:hover, .limits3 details:hover, .faq details:hover { transform: none; } }
+.copy .btn--night-sm { font-family: var(--font-ui), system-ui, sans-serif; font-size: var(--t-14); border: 1px solid var(--night-line) !important; padding: 2px 12px; cursor: pointer; }
+.copy .btn--night-sm:hover { border-color: var(--on-night-muted) !important; }
