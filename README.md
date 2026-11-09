@@ -32,9 +32,9 @@ Two honest notes. The relayer answers browser requests only from its own allowli
 
 ## What it looks like
 
-![After import 2 with memory on: 0 repeat questions, the memory drawer on the right](docs/shots/1440-import2.png)
+![After import 2 with memory on: 0 repeat questions, the memory drawer on the right](docs/shots/v3/app-import2-1440-light.png)
 
-The filing moment (the questions memory already answers fly into the drawer, about 1.2 s): [docs/filing-moment.gif](docs/filing-moment.gif). More screens, in light and dark at 1440 and 375 px, are in [docs/shots](docs/shots). The design plan is [docs/design-plan.md](docs/design-plan.md) and the critique with checks is [docs/design-critique.md](docs/design-critique.md).
+The filing moment (the questions memory already answers fly into the drawer, about 1.2 s): [docs/filing-moment.gif](docs/filing-moment.gif). More screens, in light and dark at 1440 and 375 px, are in [docs/shots](docs/shots). The design plans are [docs/design-plan.md](docs/design-plan.md) and [docs/design-plan-v3.md](docs/design-plan-v3.md), and the critique with checks is [docs/design-critique.md](docs/design-critique.md).
 
 ## How it uses Tatum
 
