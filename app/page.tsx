@@ -88,17 +88,17 @@ export default function Product() {
             <h2 id="how-h">How it works</h2>
             <ol className="cards3">
               <li>
-                <img src="/product/step-import.png" width="412" height="247" loading="lazy" alt="Step 1 of the guided sample: LedgerKeeper labelled 28 of 36 transactions, 5 need you." />
+                <img src="/product/step-import.png" width="788" height="329" loading="lazy" alt="Step 1 of the guided sample: LedgerKeeper labelled 28 of 36 transactions, 5 need you." />
                 <h3><span>1</span> Import</h3>
                 <p>Paste a Sui address; LedgerKeeper reads it through Tatum and labels transfers, swaps, liquidity and staking.</p>
               </li>
               <li>
-                <img src="/product/step-answer.png" width="396" height="295" loading="lazy" alt="A question card asking who a counterparty is, with four answers to choose from." />
+                <img src="/product/step-answer.png" width="788" height="230" loading="lazy" alt="A question card asking who a counterparty is, with four answers to choose from." />
                 <h3><span>2</span> Answer once</h3>
                 <p>Each unclear counterparty or contract is one question, saved as a rule and never asked again.</p>
               </li>
               <li>
-                <img src="/product/step-hand.png" width="592" height="226" loading="lazy" alt="The accountant view with a labelled ledger and a Download CSV button." />
+                <img src="/product/step-hand.png" width="1156" height="526" loading="lazy" alt="The accountant view: the report header, its counts and a Download CSV button." />
                 <h3><span>3</span> Hand over</h3>
                 <p>Send a labelled CSV, or open the accountant view, which reads your rules with its own key.</p>
                 <p className="cards3__cta"><span className="small muted">See the CSV your accountant gets</span> <a className="btn btn--pill-sm" href="/sample.csv" download>Sample CSV, from the demo memory as of 9 Nov</a></p>
