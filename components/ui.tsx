@@ -9,6 +9,7 @@ export const IconSearch = () => (<svg {...base}><circle cx="7" cy="7" r="4.2" />
 export const IconCommand = () => (<svg {...base}><path d="M5.5 5.5h5v5h-5zM5.5 5.5V4a1.5 1.5 0 10-1.5 1.5zM10.5 5.5V4A1.5 1.5 0 1112 5.5zM5.5 10.5V12A1.5 1.5 0 114 10.5zM10.5 10.5V12a1.5 1.5 0 101.5-1.5z" /></svg>);
 export const IconSun = () => (<svg {...base}><circle cx="8" cy="8" r="3" /><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1" /></svg>);
 export const IconMoon = () => (<svg {...base}><path d="M13 9.5A5.5 5.5 0 116.5 3a4.5 4.5 0 006.5 6.5z" /></svg>);
+export const IconInfo = () => (<svg {...base}><circle cx="8" cy="8" r="6" /><path d="M8 7.2v3.6M8 5h.01" /></svg>);
 export const IconDrawer = () => (<svg {...base}><rect x="2.5" y="3" width="11" height="10" rx="1" /><path d="M2.5 8h11M6.5 10.5h3" /></svg>);
 
 // The mark: a ledger page of three lines, one swiped by the marker.

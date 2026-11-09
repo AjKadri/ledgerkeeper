@@ -37,20 +37,26 @@ function View() {
   return (
     <div className="app-b">
       <Header wallet={address || undefined} accountant />
-      <div className="shell" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="shell" style={{ paddingTop: 8, paddingBottom: 48 }}>
         {!address || !ns ? (
           <Section>
+            <div className="card" style={{ marginTop: 24 }}>
             <h1 className="rtitle">Nothing to show yet</h1>
             <p className="muted" style={{ marginTop: 8, maxWidth: "60ch" }}>This report opens from the owner&rsquo;s LedgerKeeper, with a wallet and a memory session. Ask them to use &ldquo;Open the accountant view&rdquo;.</p>
             <p style={{ marginTop: 16 }}><a className="btn" href="/">Go to LedgerKeeper</a></p>
+            </div>
           </Section>
         ) : (
           <>
-            <Section>
-              <h1 className="rtitle">Labelled transaction report</h1>
-              <p className="muted" style={{ marginTop: 4 }}>
+            <div className="night band">
+              <h1>Labelled transaction report</h1>
+              <p>
                 Wallet <Copyable value={address} shown={short(address)} label="Copy wallet" />{dateRange && <> · <span className="num">{dateRange}</span></>}. Read-only: this app asks nothing and reads the owner&rsquo;s saved rules with its own key.
               </p>
+              {out && <p style={{ marginTop: 14 }}><span className="chip">Rules from the owner&rsquo;s memory: <span className="num">{out.rules.count}</span></span></p>}
+            </div>
+            <Section>
+              <div className="card" style={{ marginTop: 16 }}>
               <p className="small muted" style={{ marginTop: 8 }}>
                 Reads the <b>demo memory</b>{acct && <> (account <Copyable value={acct} shown={short(acct)} label="Copy account id" />)</>} only, for now. A memory made with &ldquo;Use my own memory (beta)&rdquo; is read in the main app with the key stored in that browser. This view cannot be given a second key yet, so for your own memory hand your accountant the CSV from the main app.
               </p>
@@ -75,6 +81,7 @@ function View() {
                   </p>
                 </>
               )}
+              </div>
             </Section>
 
             <Section title="Transactions" note={out ? `${out.ledger.length} rows` : undefined}>
@@ -83,7 +90,7 @@ function View() {
 
             {out && (
               <Section title={`Rules from the owner's memory: ${out.rules.count}`} note="These decided the labels marked from memory.">
-                <div className="rules-panel" style={{ marginTop: 0 }}>
+                <div className="rules-panel card" style={{ marginTop: 0 }}>
                   <ul>
                     {out.rulesList.map((r) => (
                       <li key={r.match}>

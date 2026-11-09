@@ -16,7 +16,7 @@ import { Drawer, rangeText } from "@/components/Drawer";
 import { Ledger, Skeleton } from "@/components/Ledger";
 import { AnsweredCard, QuestionCard } from "@/components/QuestionCard";
 import { Hint, Stepper, Tip } from "@/components/Guide";
-import { IconDrawer, Segmented } from "@/components/ui";
+import { IconDrawer, IconInfo, Segmented } from "@/components/ui";
 import { toDrawer, type DrawerData, type FromMemory, type Question, type RawRules, type Row, type SaveState } from "@/components/types";
 
 type Counts = { asked: number; repeat: number; new: number };
@@ -44,6 +44,7 @@ export default function Home() {
   const [memory, setMemory] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [errorReason, setErrorReason] = useState<string | undefined>();
   const [res, setRes] = useState<ImportResult | null>(null);
   const [which, setWhich] = useState("");
   const [saves, setSaves] = useState<Record<string, SaveState>>({});
@@ -115,17 +116,19 @@ export default function Home() {
   async function run(name: string, range: { from?: string; to?: string }, o?: { memory?: boolean; addr?: string }) {
     if (memMode === "own" && !own) { say("Finish setting up your own memory first."); return; }
     const addr = o?.addr ?? address, mem = o?.memory ?? memory;
-    setBusy(true); setError(""); setWhich(name); lastRun.current = { name, range, addr };
+    setBusy(true); setError(""); setErrorReason(undefined); setWhich(name); lastRun.current = { name, range, addr };
     try {
       const ruleSet = usingOwn ? await (await byo()).ownRecall(own!) : undefined;
       const resp = await fetch("/api/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: addr, namespace: session, memory: mem, ruleSet, ...range }) });
       const j: ImportResult = await resp.json();
-      if (!resp.ok) throw new Error((j as unknown as { error: string }).error);
+      if (!resp.ok) { const f = j as unknown as { error: string; reason?: string }; setErrorReason(f.reason); throw new Error(f.error); }
+      setErrorReason(undefined);
       setSaves({}); setPick({}); setOutcome(null); setEditing(null); outcomeFor.current = null;
       setWrites(j.writes); setDrawer(toDrawer(j.drawer)); setDrawerLoading(false);
       setRes(j);
     } catch (e) { setError((e as Error).message); setRes(null); } finally { setBusy(false); }
   }
+  const tryAnother = () => { setError(""); setErrorReason(undefined); setAddress(""); setTimeout(() => document.getElementById("addr")?.focus(), 50); };
   const runSample = () => { setAddress(DEMO_WALLET); setMode("sample"); setGstep(1); run("First import (Jan–Jun)", { to: IMPORT_SPLIT.import1.to }, { addr: DEMO_WALLET, memory: true }); setMemory(true); };
   const runOwn = (a = address) => { setMode("own"); setMemory(true); run("Import", {}, { addr: a, memory: true }); };
   const runNext = () => { setGstep(3); setMemory(true); run("Next import (Jul–Aug)", IMPORT_SPLIT.import2, { addr: DEMO_WALLET, memory: true }); };
@@ -408,7 +411,7 @@ export default function Home() {
           )}
 
           {!started && (
-            <section className="hero">
+            <section className="hero app-start">
               <h1>Label your Sui history for your accountant. Answer each question once.</h1>
               <p className="lead">Your answers are kept in your Walrus Memory, so the next import, and any app you allow, starts from what you already told it. New here? Try the sample: it takes about two minutes.</p>
               <div className="hero__form">
@@ -433,9 +436,27 @@ export default function Home() {
               <div className="walletbar">{field(false)}</div>
               {memChoice}
               {rangeButtons}
-              {error && (
-                <div className="banner banner--bad" role="alert" style={{ marginTop: 16, marginBottom: 0 }}>
-                  <b>Could not import.</b> {error} <button type="button" className="btn btn--quiet" style={{ minHeight: 32 }} onClick={runSample}>Try the sample wallet</button>
+              {error && errorReason === "no_recent_activity" && (
+                <div className="calm" role="status" data-testid="no-activity">
+                  <span className="calm__ico" aria-hidden="true"><IconInfo /></span>
+                  <div>
+                    <h2 className="calm__title">No activity we can read yet</h2>
+                    <p>This wallet hasn&rsquo;t moved since before 23 Jan 2026, the earliest history available. Try a wallet you&rsquo;ve used since February, or the sample wallet.</p>
+                    <div className="calm__actions">
+                      <button type="button" className="btn btn--primary" onClick={tryAnother}>Try another address</button>
+                      <button type="button" className="btn" onClick={runSample}>Try the sample wallet</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {error && errorReason !== "no_recent_activity" && (
+                <div className="calm calm--bad" role="alert">
+                  <span className="calm__ico" aria-hidden="true"><IconInfo /></span>
+                  <div>
+                    <h2 className="calm__title">Could not import.</h2>
+                    <p>{error}</p>
+                    <div className="calm__actions"><button type="button" className="btn" onClick={runSample}>Try the sample wallet</button></div>
+                  </div>
                 </div>
               )}
             </Section>
@@ -456,6 +477,7 @@ export default function Home() {
                 </Section>
               )}
               <Section>
+                <div className="card result">
                 <p className="result__meta">
                   {which}: <span className="num">{res.txCount}</span> transactions ({res.source === "cached" ? `cached at ${res.cachedAt}` : "live from Tatum"}){res.note ? ` · ${res.note}` : ""}
                   {outcome && <> · import outcome {outcome === "saving" ? "saving…" : outcome === "saved" ? "saved" : outcome === "unchanged" ? "unchanged, not written again" : "not saved"}</>}
@@ -494,7 +516,7 @@ export default function Home() {
                 {(!guided || (gstep === 3 && !busy)) && (
                   <>
                     <h1 className="big" aria-live="polite">
-                      <Tip text="Questions you answered in an earlier import that you would have to answer again. With your memory this should be zero."><span className="num">{bigRepeat}</span> question{bigRepeat === 1 ? "" : "s"} you&rsquo;d have answered again</Tip>
+                      <Tip text="Questions you answered in an earlier import that you would have to answer again. With your memory this should be zero."><span className="mark"><span className="num">{bigRepeat}</span> question{bigRepeat === 1 ? "" : "s"} you&rsquo;d have answered again</span></Tip>
                     </h1>
                     <p className="big__sub">
                       {res.memory
@@ -534,6 +556,7 @@ export default function Home() {
                   </p>
                 )}
                 {incomplete && <div className="banner banner--bad" role="alert" style={{ marginTop: 16 }}><b>Memory returned fewer items than it holds.</b> Some saved answers may be missing, so saving is paused. Run the import again before answering.</div>}
+                </div>
               </Section>
 
               {(!guided || gstep >= 2) && (
