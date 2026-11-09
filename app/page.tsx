@@ -12,6 +12,14 @@ export const metadata = {
 // The text of a real rule, as stored in Walrus Memory by the sample run (see docs/shots/v2).
 const RULE_TEXT = "[tax-rule] match=0x60956e40d8f921affde3cb861de91a6a6a0bab28af7cd1c23e029d46b86a449b kind=exchange v=2";
 
+const LIMITS: { t: string; d: string }[] = [
+  { t: "History from 23 Jan 2026", d: "History starts on 23 Jan 2026, the earliest Tatum serves for Sui, and covers a wallet\u2019s newest 500 transactions." },
+  { t: "Not tax advice", d: "Labels are for your accountant. This is not tax advice." },
+  { t: "Demo memory visible to the relayer", d: "The demo memory is visible to the Walrus Memory relayer." },
+  { t: "Small hand-checked samples", d: "Labelling was hand-checked on small samples from three wallets, not on large ones." },
+  { t: "USD is approximate", d: "USD values are approximate, for SUI legs only, from a Cetus pool price." },
+];
+
 const FAQ: { q: string; a: string }[] = [
   { q: "Is this tax advice?", a: "No. LedgerKeeper labels transactions so that your accountant can work from a tidy record. What each label means for your tax, and whether the labels are right for your situation, is a decision for you and your accountant." },
   { q: "Where do my answers live?", a: "In Walrus Memory on mainnet, as short text rules under your account. They are not locked inside LedgerKeeper. In this demo the memory is visible to the Walrus Memory relayer, so do not use a wallet you want kept private." },
@@ -31,16 +39,24 @@ export default function Product() {
         <section className="pp pp--hero">
           <div className="shell">
             <h1>Label your Sui history for your accountant. Answer each question once.</h1>
-            <p className="lead">LedgerKeeper asks about each unclear counterparty one time and keeps the answer in your Walrus Memory. The next import, and your accountant&rsquo;s app, start from what you already said.</p>
+            <p className="lead">LedgerKeeper asks about each unclear counterparty one time and keeps the answer in your Walrus Memory.</p>
             <HeroForm />
-            <p className="caption">History from 23 Jan 2026 · Labelling for your accountant, not tax advice</p>
+            <ul className="facts" aria-label="Good to know">
+              <li><a href="#limits">History from 23 Jan 2026</a></li>
+              <li><a href="#limits">Not tax advice</a></li>
+              <li>Sample: public wallet, fictional owner</li>
+            </ul>
           </div>
         </section>
 
         <section className="pp pp--center" aria-labelledby="problem" style={{ paddingTop: 24 }}>
           <div className="shell">
             <h2 id="problem">The same questions, again</h2>
-            <p className="pp__lead" style={{ marginTop: 12 }}>The sample wallet has 47 transactions. The first import raises five questions. The next import runs into two of the same counterparties again. An answer kept inside one app stays there, so a new tool, or a new year, asks them all over.</p>
+            <p className="pp__lead" style={{ marginTop: 12 }}>An answer kept inside one app stays there, so a new tool, or a new year, asks them all over.</p>
+            <details className="why">
+              <summary>Why?</summary>
+              <p>The sample wallet has 47 transactions. The first import raises five questions. The next import runs into two of the same counterparties again. With LedgerKeeper, the next import, and your accountant&rsquo;s app, start from what you already said.</p>
+            </details>
             <Demo question={sample.question} rows={sample.rows} ruleText={sample.ruleText} />
           </div>
         </section>
@@ -48,11 +64,16 @@ export default function Product() {
         <section className="pp pp--center night" id="memory" aria-labelledby="mem-h">
           <div className="shell">
             <h2 id="mem-h">Your answers aren&rsquo;t stuck in one app.</h2>
-            <p className="pp__lead" style={{ marginTop: 12 }}>Each answer is a short rule stored in Walrus Memory on mainnet. Any app you give a key can read it. Here is a stored rule.</p>
+            <p className="pp__lead" style={{ marginTop: 12 }}>Each answer is a short rule in Walrus Memory on mainnet, and any app you give a key can read it.</p>
             <div className="rulecard">
               <pre className="rule-text" tabIndex={0}><code>{ruleHead}<span className="mark mark--night">kind=exchange</span>{ruleTail}</code></pre>
-              <p className="rulecard__meta">One memory per answer: the counterparty, what it is, and a format version. Change an answer and a newer rule is stored; the newest wins.</p>
-              <p className="rulecard__meta">Written by LedgerKeeper with one delegate key. Read by the accountant app with a second delegate key. Neither holds your wallet keys.</p>
+              <p className="rulecard__meta">One memory per answer; the newest wins.</p>
+              <p className="rulecard__meta">Written with one delegate key, read by the accountant app with a second. Neither holds your wallet keys.</p>
+              <details className="rulecard__more">
+                <summary>About this rule</summary>
+                <p>One memory per answer: the counterparty, what it is, and a format version. Change an answer and a newer rule is stored; the newest wins.</p>
+                <p>Written by LedgerKeeper with one delegate key. Read by the accountant app with a second delegate key. Neither holds your wallet keys.</p>
+              </details>
             </div>
             <p style={{ marginTop: 28 }}><a className="btn" href="https://github.com/AjKadri/ledgerkeeper#how-it-uses-walrus-memory" rel="noreferrer">See how it&rsquo;s stored</a></p>
           </div>
@@ -65,12 +86,12 @@ export default function Product() {
               <li>
                 <img src="/product/step-import.png" width="412" height="247" loading="lazy" alt="Step 1 of the guided sample: LedgerKeeper labelled 28 of 36 transactions, 5 need you." />
                 <h3><span>1</span> Import</h3>
-                <p>Paste a Sui address. LedgerKeeper reads the history through Tatum and labels what it can: transfers, swaps, liquidity, staking.</p>
+                <p>Paste a Sui address; LedgerKeeper reads it through Tatum and labels transfers, swaps, liquidity and staking.</p>
               </li>
               <li>
                 <img src="/product/step-answer.png" width="396" height="295" loading="lazy" alt="A question card asking who a counterparty is, with four answers to choose from." />
                 <h3><span>2</span> Answer once</h3>
-                <p>Each unclear counterparty or contract is one question. Your answer is saved as a rule and is never asked again.</p>
+                <p>Each unclear counterparty or contract is one question, saved as a rule and never asked again.</p>
               </li>
               <li>
                 <img src="/product/step-hand.png" width="592" height="226" loading="lazy" alt="The accountant view with a labelled ledger and a Download CSV button." />
@@ -84,7 +105,7 @@ export default function Product() {
         <section className="pp pp--center night" aria-labelledby="learn-h" style={{ ["--lit" as string]: 9 }}>
           <div className="shell">
             <h2 id="learn-h">What the memory learns</h2>
-            <p className="pp__lead" style={{ marginTop: 12 }}>After each import LedgerKeeper stores how it went. The second import of the sample wallet asked three new questions and reused two answers from memory. If you change an answer, the newest one wins.</p>
+            <p className="pp__lead" style={{ marginTop: 12 }}>After each import LedgerKeeper stores how it went.</p>
             <ol className="ntl" aria-label="Imports of the sample wallet recorded in memory">
               <li><b>Up to 30 Jun</b><span>5 asked, 5 answered.</span></li>
               <li><b>Jul–Aug</b><span>3 asked, 3 answered, <span className="mark mark--night">2 reused from memory</span>.</span></li>
@@ -103,13 +124,11 @@ export default function Product() {
             </div>
             <div>
               <h2 id="limits-h">Honest limits</h2>
-              <ul className="softlist" aria-labelledby="limits-h">
-                <li>History starts on 23 Jan 2026, the earliest Tatum serves for Sui, and covers a wallet&rsquo;s newest 500 transactions.</li>
-                <li>Labels are for your accountant. This is not tax advice.</li>
-                <li>The demo memory is visible to the Walrus Memory relayer.</li>
-                <li>Labelling was hand-checked on small samples from three wallets, not on large ones.</li>
-                <li>USD values are approximate, for SUI legs only, from a Cetus pool price.</li>
-              </ul>
+              <div className="softlist limits3" id="limits">
+                {LIMITS.map((l) => (
+                  <details key={l.t}><summary>{l.t}</summary><p>{l.d}</p></details>
+                ))}
+              </div>
             </div>
           </div>
         </section>

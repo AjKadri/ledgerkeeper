@@ -818,3 +818,42 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
   .stepper li { border-radius: 14px; }
 }
 @media (max-width: 360px) { .seg__opt { padding: 4px 8px; font-size: 0.8125rem; } }
+
+/* ---------- v3 revision: declutter ---------- */
+.drawer__head { display: flex; align-items: center; gap: 8px; }
+.drawer__head .tip > button { border-bottom: 0; color: var(--muted); display: inline-flex; padding: 4px; border-radius: 50%; }
+.drawer__head .tip > button:hover { color: var(--ink); }
+.drawer__head .tip [role="tooltip"] { left: -120px; right: auto; width: min(260px, 72vw); }
+.drawer__more { margin-top: 20px; }
+.drawer__more summary { cursor: pointer; font-size: var(--t-14); font-weight: 650; padding: 6px 0; }
+.drawer__more .tl { margin-top: 8px; }
+.howcount { margin-top: 16px; font-size: var(--t-14); }
+.howcount summary { cursor: pointer; color: var(--muted); font-weight: 600; width: fit-content; }
+.howcount summary:hover { color: var(--ink); }
+.howcount > div { margin-top: 10px; display: grid; gap: 10px; }
+.howcount .usd, .howcount .last { margin-top: 0; }
+.pp { padding: 128px 0; }
+.pp--hero { padding: 88px 0 72px; }
+.pp__lead, .pp--hero .lead, .cards3 p, .why p, .faq details p, .limits3 p { max-width: 60ch; }
+.pp--center .pp__lead, .pp--hero .lead { margin-left: auto; margin-right: auto; }
+.facts { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.facts li { font-size: var(--t-14); color: var(--muted); border: 1px solid var(--rule); border-radius: var(--r-pill); padding: 3px 12px; background: var(--sheet); }
+.facts a { text-decoration: none; color: inherit; }
+.facts a:hover { color: var(--ink); }
+.why { margin: 16px auto 0; max-width: 60ch; text-align: left; }
+.why summary, .rulecard__more summary, .limits3 summary { cursor: pointer; font-weight: 600; }
+.why summary { width: fit-content; margin: 0 auto; color: var(--muted); font-size: var(--t-14); }
+.why p { margin: 10px auto 0; color: var(--muted); }
+.rulecard__more { margin-top: 10px; font-size: var(--t-14); color: var(--on-night-muted); }
+.rulecard__more summary { color: var(--on-night); width: fit-content; }
+.rulecard__more p { margin-top: 8px; }
+.limits3 details { background: var(--sheet); border: 1px solid var(--card-border); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 14px 20px; }
+.limits3 summary { list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.limits3 summary::-webkit-details-marker { display: none; }
+.limits3 summary::after { content: "+"; color: var(--muted); }
+.limits3 details[open] summary::after { content: "\2212"; }
+.limits3 p { margin-top: 8px; color: var(--muted); }
+@media (max-width: 640px) {
+  .pp { padding: 72px 0; }
+  .pp--hero { padding: 48px 0 40px; }
+}

@@ -57,9 +57,13 @@ function View() {
             </div>
             <Section>
               <div className="card" style={{ marginTop: 16 }}>
-              <p className="small muted" style={{ marginTop: 8 }}>
-                Reads the <b>demo memory</b>{acct && <> (account <Copyable value={acct} shown={short(acct)} label="Copy account id" />)</>} only, for now. A memory made with &ldquo;Use my own memory (beta)&rdquo; is read in the main app with the key stored in that browser. This view cannot be given a second key yet, so for your own memory hand your accountant the CSV from the main app.
+              <p className="small muted" style={{ marginTop: 0 }}>
+                Reads the <b>demo memory</b>{acct && <> (account <Copyable value={acct} shown={short(acct)} label="Copy account id" />)</>} only, for now.
               </p>
+              <details className="howcount" style={{ marginTop: 6 }}>
+                <summary>Details</summary>
+                <div><p className="small muted">A memory made with &ldquo;Use my own memory (beta)&rdquo; is read in the main app with the key stored in that browser. This view cannot be given a second key yet, so for your own memory hand your accountant the CSV from the main app.</p></div>
+              </details>
               {err && <div className="banner banner--bad" role="alert" style={{ marginTop: 16 }}><b>Could not read this report.</b> {err}</div>}
               {!out && !err && <div className="rgrid" aria-busy="true">{[0, 1, 2].map((i) => <div key={i}><div className="sk" style={{ width: 80, height: 28 }} /><div className="sk" style={{ width: 120, marginTop: 8 }} /></div>)}</div>}
               {out && (

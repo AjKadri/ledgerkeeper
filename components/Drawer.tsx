@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { friendly, optionsFor } from "@/lib/answers";
 import { ago, day, short } from "@/lib/format";
-import { Copyable, Steps } from "./ui";
-import { Hint } from "./Guide";
+import { Copyable, IconInfo, Steps } from "./ui";
+import { Tip } from "./Guide";
 import type { DrawerData, DrawerOutcome, SaveState } from "./types";
 
 const blob = (b: string) => (
@@ -62,9 +62,12 @@ export function Drawer({ data, saves, writesOn, writesReason, session, editing, 
       <aside className="side" data-open={open} aria-label="Memory drawer" id="memory-drawer">
         <div className="drawer">
           <button type="button" className="btn btn--quiet drawer__close" onClick={onClose}>Close memory drawer</button>
-          <h2>Your memory</h2>
-          <p className="drawer__sub">Walrus Memory, mainnet. Every answer is filed here as a rule.</p>
-          <Hint id="drawer">Every answer you give is filed here, in your Walrus Memory.</Hint>
+          <div className="drawer__head">
+            <h2>Your memory</h2>
+            <Tip text={`Walrus Memory, mainnet. Every answer is filed here as a rule. ${ownLabel ? "The Walrus Memory relayer stores and can read these memories." : "The demo memory is visible to the Walrus Memory relayer."}${writesOn ? " Memory writes are on." : ""}`}>
+              <span className="sr-only">About your memory</span><IconInfo />
+            </Tip>
+          </div>
           <div className="drawer__stat">
             <div><div className="v num" data-dock-count>{loading && !data ? "–" : rules.length}</div><div className="k">{rules.length === 1 ? "rule" : "rules"}</div></div>
             <div><div className="v num">{data?.outcomes.length ?? (loading ? "–" : 0)}</div><div className="k">{data?.outcomes.length === 1 ? "import outcome" : "import outcomes"}</div></div>
@@ -105,19 +108,20 @@ export function Drawer({ data, saves, writesOn, writesReason, session, editing, 
             })}
           </div>
 
-          <h3>Imports and changes</h3>
-          {items.length === 0 ? <p className="small muted">Your first import and every change will be listed here.</p> : (
-            <ol className="tl">
-              {items.slice(0, 12).map((it, i) => (
-                <li key={i} data-k={it.k}>{it.text}<span className="when" title={new Date(it.at).toUTCString()}>{day(it.at)}</span></li>
-              ))}
-            </ol>
-          )}
+          <details className="drawer__more">
+            <summary>Imports and changes{items.length > 0 && <> (<span className="num">{items.length}</span>)</>}</summary>
+            {items.length === 0 ? <p className="small muted">Your first import and every change will be listed here.</p> : (
+              <ol className="tl">
+                {items.slice(0, 12).map((it, i) => (
+                  <li key={i} data-k={it.k}>{it.text}<span className="when" title={new Date(it.at).toUTCString()}>{day(it.at)}</span></li>
+                ))}
+              </ol>
+            )}
+          </details>
 
           <div className="drawer__foot">
             {ownLabel ? <span>Your own memory, account <Copyable value={ownLabel} shown={ownLabel.slice(0, 8) + "…" + ownLabel.slice(-4)} /></span> : <span>Demo session <button type="button" className="linkbtn" onClick={onStartOver}>Start over</button></span>}
-            <span>{writesOn ? "Memory writes are on." : <b style={{ color: "var(--ink)" }}>Read-only: {writesReason ?? "memory writes are switched off."}</b>}</span>
-            <span>{ownLabel ? "The Walrus Memory relayer stores and can read these memories." : "The demo memory is visible to the Walrus Memory relayer."}</span>
+            {!writesOn && <span><b style={{ color: "var(--ink)" }}>Read-only: {writesReason ?? "memory writes are switched off."}</b></span>}
           </div>
         </div>
       </aside>

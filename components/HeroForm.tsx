@@ -17,7 +17,6 @@ export function HeroForm() {
       <div className="hero__actions">
         <a className="btn btn--primary" href="/app?sample=1">Try the sample wallet</a>
         <button type="button" className="btn" disabled={!a.ok} onClick={go}>Import my wallet</button>
-        <span className="small muted">The sample is a public wallet with a fictional owner. About two minutes.</span>
       </div>
     </div>
   );

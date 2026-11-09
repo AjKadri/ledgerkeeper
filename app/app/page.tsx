@@ -523,8 +523,18 @@ export default function Home() {
                         ? <><Tip text="Questions your memory already had an answer for, so you were not asked."><b className="num">{res.counts.off.repeat}</b> answered from memory</Tip> · <Tip text="Questions this import asks for the first time."><b className="num">{c.on.new}</b> new</Tip></>
                         : <><b className="num">{res.counts.off.repeat}</b> you would be asked again · <b className="num">{c.off.new}</b> new</>}
                     </p>
-                    <p className="small muted" style={{ marginTop: 4 }}>Questions you&rsquo;d have answered again: <span className="num">{c.on.repeat}</span> with your memory / <span className="num">{c.off.repeat}</span> without it</p>
 
+
+                    <div className="compare">
+                      <Segmented label="Show this import" value={memory ? "on" : "off"} onChange={switchMemory} disabled={busy}
+                        options={[{ value: "on", text: "With your memory" }, { value: "off", text: "Without it" }]} />
+                      <div className="compare__col compare__col--on"><div className="k">With your memory</div><div className="v num">{c.on.asked} asked</div><div className="d num">{c.on.repeat} you&rsquo;d answer again · {c.on.new} new</div></div>
+                      <div className="compare__col"><div className="k">Without it</div><div className="v num">{c.off.asked} asked</div><div className="d num">{c.off.repeat} you&rsquo;d answer again · {c.off.new} new</div></div>
+                    </div>
+                    <details className="howcount">
+                      <summary>How we count</summary>
+                      <div>
+                    <p className="small muted">Questions you&rsquo;d have answered again: <span className="num">{c.on.repeat}</span> with your memory / <span className="num">{c.off.repeat}</span> without it</p>
                     {res.previousOutcome ? (
                       <p className="last">
                         {res.previousOutcome.asked === 0
@@ -533,14 +543,14 @@ export default function Home() {
                         This time: <b className="num">{c.on.new}</b> new question{c.on.new === 1 ? "" : "s"}, <b className="num">{res.reused}</b> reused from memory.{" "}
                         <span className="small muted">From your import outcome memory.</span>
                       </p>
-                    ) : <p className="small muted" style={{ marginTop: 16 }}>No earlier import is recorded in this memory yet.</p>}
-
-                    <div className="compare">
-                      <Segmented label="Show this import" value={memory ? "on" : "off"} onChange={switchMemory} disabled={busy}
-                        options={[{ value: "on", text: "With your memory" }, { value: "off", text: "Without it" }]} />
-                      <div className="compare__col compare__col--on"><div className="k">With your memory</div><div className="v num">{c.on.asked} asked</div><div className="d num">{c.on.repeat} you&rsquo;d answer again · {c.on.new} new</div></div>
-                      <div className="compare__col"><div className="k">Without it</div><div className="v num">{c.off.asked} asked</div><div className="d num">{c.off.repeat} you&rsquo;d answer again · {c.off.new} new</div></div>
-                    </div>
+                    ) : <p className="small muted">No earlier import is recorded in this memory yet.</p>}
+                        {res.usd.priced > 0 && !busy && (
+                  <p className="usd">
+                    <Tip text="Approximate. SUI amounts valued at the Cetus SUI/USDC pool price at that time. Other coins are not valued."><b>USD value of SUI legs</b></Tip> (approximate, on-chain pool price): received <b className="num">{usdFmt(res.usd.received)}</b>, sent <b className="num">{usdFmt(Math.abs(res.usd.sent))}</b> across <span className="num">{res.usd.priced}</span> of <span className="num">{res.usd.of}</span> transactions. Other coins (for example CETUS) are not valued.
+                  </p>
+                        )}
+                      </div>
+                    </details>
                     {guided && <div className="guidebar"><button type="button" className="btn btn--quiet" onClick={goBack} disabled={busy}>Back</button></div>}
                   </>
                 )}
@@ -550,11 +560,6 @@ export default function Home() {
                     Updated from {friendly(u.from, u.match)} to {friendly(u.to, u.match)}: <span className="mono">{short(u.match)}</span>. The newest answer wins.
                   </p>
                 ))}
-                {res.usd.priced > 0 && !busy && (!guided || gstep === 3) && (
-                  <p className="usd">
-                    <Tip text="Approximate. SUI amounts valued at the Cetus SUI/USDC pool price at that time. Other coins are not valued."><b>USD value of SUI legs</b></Tip> (approximate, on-chain pool price): received <b className="num">{usdFmt(res.usd.received)}</b>, sent <b className="num">{usdFmt(Math.abs(res.usd.sent))}</b> across <span className="num">{res.usd.priced}</span> of <span className="num">{res.usd.of}</span> transactions. Other coins (for example CETUS) are not valued.
-                  </p>
-                )}
                 {incomplete && <div className="banner banner--bad" role="alert" style={{ marginTop: 16 }}><b>Memory returned fewer items than it holds.</b> Some saved answers may be missing, so saving is paused. Run the import again before answering.</div>}
                 </div>
               </Section>

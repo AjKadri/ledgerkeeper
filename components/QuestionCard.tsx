@@ -81,7 +81,6 @@ export const QuestionCard = forwardRef<HTMLDivElement, Props>(function QuestionC
         <button type="button" className="btn btn--primary" disabled={!value || saving || !canSave} onClick={onSave}>
           {save?.phase === "error" ? "Retry save" : "Save answer"}
         </button>
-        <span className="kbdhint">{value ? <><kbd>Enter</kbd> saves</> : <><kbd>1</kbd>–<kbd>{opts.length}</kbd> choose</>}</span>
       </div>
       {save && (saving || save.phase === "error") && <Steps state={save.phase === "error" ? "error" : save.step} error={save.error} />}
     </div>
