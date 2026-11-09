@@ -1,5 +1,7 @@
 # Design plan v3: one language for `/`, `/app` and `/accountant`
 
+> **Revision, 9 Nov afternoon (overrides everything below where they differ):** palette A, so night sections and dark mode are **navy** (night #1C2533, floor #0F1620; dark mode uses the v2 values paper #0F1620, sheet #17202C, ink #E6ECF2, muted #9AA9BA, rule #2B3A4D, rule-strong #5F7088 for controls). Green (#2E6B4F / dark #6CBE93) only means saved, answered or from memory. Accountant band: teal family (#0A4A4E light, #0A3D41 dark). Demo glow: navy to marker. Ledger columns and the flat lit column are re-tinted for navy. See section 11.
+>
 > **Approved 9 Nov with changes (these override the text below):**
 > 1. Ledger columns are crisp 1px vertical rules plus one thin horizontal header rule. The lit column is a flat, even tint (marker or green at low opacity), like a highlighted spreadsheet column: no glow, no fade, no bloom.
 > 2. Type: **Schibsted Grotesk stays** (UI and display); JetBrains Mono for addresses. Plus Jakarta Sans is not used.
@@ -125,3 +127,28 @@ The reference frames stay in `../design-ref/`. Nothing from them is copied into 
 ## 10. Risks and decisions for the user
 - **Preview keys:** the Vercel project has no connected Git repository, so `vercel env add NAME preview redesign-v3` is refused ("does not have a connected Git repository"). Nothing was added. Also, the Preview `MEMORY_WRITES_ENABLED` is currently `"false"` (left from the 6 Nov kill-switch test).
 - **Preview protection:** previews redirect unauthenticated requests to Vercel login (302), so the M3 script can't run against a preview URL without changing protection. Plan: run M3 against `next start` locally on the branch.
+
+
+## 11. Revision (9 Nov afternoon)
+**Colour (palette A).** Navy night and navy dark mode as above; marker and brick unchanged; `scripts/contrast.mjs` checks all text pairs for AA and control borders for 3:1.
+
+**Declutter.** One headline and at most one sentence visible per block. Longer text moves, nothing disappears:
+- Hero: H1, one line, the field, two pills, and three fact chips ("History from 23 Jan 2026", "Not tax advice", "Sample: public wallet, fictional owner").
+- "The same questions, again": one sentence plus a "Why?" disclosure.
+- Stored rule: headline, the rule card with a Copy pill, two short lines, an "About this rule" disclosure, and the button.
+- How it works: title and one sentence per card.
+- Honest limits: short titles that open to the full sentences.
+- `/app`: the keyboard hint shows once above the list; the result card has a "How we count" disclosure; the drawer has one info tooltip and an "Imports and changes" disclosure.
+- `/accountant`: a "Details" disclosure.
+- Spacing: 128px between sections on desktop (72px on mobile); body lines up to 60ch.
+
+**Motion (`/` only, `components/Motion.tsx`).** Each effect plays once and nothing loops. Under `prefers-reduced-motion` nothing runs, and the server-rendered HTML is already the final state.
+- Sections fade up 8px over 400ms.
+- The marker swipe on night sections draws left to right over 500ms.
+- The timeline's marker line draws down and "2 reused from memory" counts up from 0 to 2.
+- The demo plays itself: after 2s in view with no interaction it picks "An exchange" and flashes the relabelled rows once. Any interaction stops it, and a Replay pill appears. It makes no network calls.
+
+**Extras.**
+- The nav shadow appears after scrolling, and on `/` the nav marks the current section.
+- `/sample.csv` ("Sample CSV") is generated at build time from the sample fixture with `lib/export.ts` and the stored rule shown on the page. A test checks it equals the accountant export for the same rule set.
+- Hover and press states (120ms), the FAQ and limits open animation, and a copy button on the stored rule.
