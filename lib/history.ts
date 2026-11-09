@@ -39,10 +39,13 @@ export function inRange(txs: Tx[], from?: string, to?: string): Tx[] {
 
 // Best effort: tell "empty wallet" from "only older activity" using the current SUI balance.
 export async function emptyMessage(address: string): Promise<string> {
+  return (await emptyInfo(address)).message;
+}
+export async function emptyInfo(address: string): Promise<{ message: string; reason?: string }> {
   try {
     const d = await gql(`query($a:SuiAddress!){address(address:$a){balance(coinType:"0x2::sui::SUI"){totalBalance}}}`, { a: address }, 2);
     if (BigInt(d.address?.balance?.totalBalance ?? "0") > 0n)
-      return `No transactions since ${HISTORY_START}. This address holds funds, so its activity is probably older, and history before ${HISTORY_START} is not available.`;
+      return { message: `No transactions since ${HISTORY_START}. This address holds funds, so its activity is probably older, and history before ${HISTORY_START} is not available.`, reason: "no_recent_activity" };
   } catch { /* fall through */ }
-  return `No transactions found for this address since ${HISTORY_START}. It may be an empty wallet, or its activity may be older than the available history (before ${HISTORY_START}).`;
+  return { message: `No transactions found for this address since ${HISTORY_START}. It may be an empty wallet, or its activity may be older than the available history (before ${HISTORY_START}).` };
 }

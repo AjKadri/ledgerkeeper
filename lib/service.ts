@@ -2,7 +2,7 @@
 import { ADDRESS_RE, NAMESPACE_RE } from "./config";
 import { UserError } from "./errors";
 import { classify, questionsFrom, type Rule } from "./classify";
-import { getHistory, inRange, emptyMessage } from "./history";
+import { getHistory, inRange, emptyInfo } from "./history";
 import { countQuestions, latestOutcome, ruleValue } from "./learning";
 import { recallRules, writesAllowed, type App, type RuleSet } from "./rules";
 import { toRows, toCsv } from "./export";
@@ -32,7 +32,11 @@ export async function runImport(body: any) {
 
   const hist = await getHistory(address);
   const txs = inRange(hist.txs, from, to);
-  if (!txs.length) throw new UserError(hist.txs.length ? "No transactions in that date range." : await emptyMessage(address));
+  if (!txs.length) {
+    if (hist.txs.length) throw new UserError("No transactions in that date range.");
+    const e = await emptyInfo(address);
+    throw new UserError(e.message, e.reason);
+  }
 
   // Always recall, so both columns (memory ON / OFF) can be shown for the same import.
   const rs = own ? parseRuleSet(body.ruleSet) : await recallRules("A", namespace);
