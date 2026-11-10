@@ -9,7 +9,8 @@ import {
   addKeyTx, createAccountTx, doAddKey, doCreateAccount, doRemoveKey, estimateGas, findAccountId, makeBrowserKey,
   relayerChain, removeKeyTx, type Chain, type GasEstimate,
 } from "@/lib/byo";
-import { forgetOwn, saveOwn, type OwnMemory } from "@/lib/byo-store";
+import { forgetOwn, ownRulesKey, saveOwn, type OwnMemory } from "@/lib/byo-store";
+import { short } from "@/lib/format";
 import { Copyable } from "./ui";
 
 const KEY_WARNING = "This key is stored in this browser only. Anyone with access to this browser can use it.";
@@ -42,7 +43,7 @@ function Confirm({ title, does, est, balance, busy, action, onGo, onCancel }: {
   );
 }
 
-function Inner({ own, onReady, onForget }: { own: OwnMemory | null; onReady: (m: OwnMemory) => void; onForget: () => void }) {
+function Inner({ own, onReady, onForget, rules }: { own: OwnMemory | null; onReady: (m: OwnMemory) => void; onForget: () => void; rules?: number }) {
   const kit = useDAppKit();
   const client = useCurrentClient() as any;
   const account = useCurrentAccount();
@@ -56,6 +57,13 @@ function Inner({ own, onReady, onForget }: { own: OwnMemory | null; onReady: (m:
   const [err, setErr] = useState("");
   const [removed, setRemoved] = useState("");
   const keyRef = useRef<{ privateKey: string; publicKey: Uint8Array; suiAddress: string } | null>(null);
+  // Rules shown in the summary: the page's count after an import, else the count from the last good read kept in this browser.
+  const [cachedRules, setCachedRules] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (!own) { setCachedRules(undefined); return; }
+    try { const c = JSON.parse(localStorage.getItem(ownRulesKey(own.accountId)) ?? "null"); setCachedRules(Array.isArray(c?.rs?.rules) ? c.rs.rules.length : undefined); } catch { setCachedRules(undefined); }
+  }, [own, rules]);
+  const ruleCount = rules ?? cachedRules;
 
   const signer = useCallback(() => ({
     address: account!.address,
@@ -120,19 +128,26 @@ function Inner({ own, onReady, onForget }: { own: OwnMemory | null; onReady: (m:
     const mine = account && account.address.toLowerCase() === own.owner.toLowerCase();
     return (
       <div className="own">
-        <p><b>Using your own memory.</b> Answers are saved to your Walrus Memory account with a key made in this browser.</p>
-        <dl className="own__facts">
-          <div><dt>Account</dt><dd><Copyable value={own.accountId} shown={own.accountId} label="Copy account ID" /> <span className="muted small">(click to copy)</span></dd></div>
-          <div><dt>Owner wallet</dt><dd><Copyable value={own.owner} shown={own.owner.slice(0, 10) + "…" + own.owner.slice(-6)} /></dd></div>
-          <div><dt>Browser key</dt><dd><Copyable value={own.keyAddress} shown={own.keyAddress.slice(0, 10) + "…" + own.keyAddress.slice(-6)} /></dd></div>
-          {own.digests?.create && <div><dt>Create account tx</dt><dd><a href={scan(own.digests.create)} target="_blank" rel="noreferrer">{own.digests.create}</a></dd></div>}
-          {own.digests?.addKey && <div><dt>Add key tx</dt><dd><a href={scan(own.digests.addKey)} target="_blank" rel="noreferrer">{own.digests.addKey}</a></dd></div>}
-        </dl>
+        <p className="own__summary">
+          <b>Your own memory</b> · account <Copyable value={own.accountId} shown={short(own.accountId)} label="Copy account ID" />
+          {ruleCount !== undefined && <> · <span className="num">{ruleCount}</span> {ruleCount === 1 ? "rule" : "rules"}</>}
+        </p>
         <p className="own__warn" role="note">{KEY_WARNING}</p>
         <div className="own__row">
           <button type="button" className="btn" onClick={() => { forgetOwn(); onForget(); }}>Forget this browser</button>
           <span className="small muted">Forgetting deletes the key from this browser. The key stays registered on your account until you remove it with your wallet.</span>
         </div>
+        <details className="own__details">
+          <summary>Account details</summary>
+          <p><b>Using your own memory.</b> Answers are saved to your Walrus Memory account with a key made in this browser.</p>
+          <dl className="own__facts">
+          <div><dt>Account</dt><dd><Copyable value={own.accountId} shown={own.accountId} label="Copy account ID" /> <span className="muted small">(click to copy)</span></dd></div>
+          <div><dt>Owner wallet</dt><dd><Copyable value={own.owner} shown={own.owner.slice(0, 10) + "…" + own.owner.slice(-6)} /></dd></div>
+          <div><dt>Browser key</dt><dd><Copyable value={own.keyAddress} shown={own.keyAddress.slice(0, 10) + "…" + own.keyAddress.slice(-6)} /></dd></div>
+          {own.digests?.create && <div><dt>Create account tx</dt><dd><a href={scan(own.digests.create)} target="_blank" rel="noreferrer">{own.digests.create}</a></dd></div>}
+          {own.digests?.addKey && <div><dt>Add key tx</dt><dd><a href={scan(own.digests.addKey)} target="_blank" rel="noreferrer">{own.digests.addKey}</a></dd></div>}
+          </dl>
+        </details>
         {step !== "remove" ? (
           <p className="small" style={{ marginTop: 12 }}>
             To also remove the key on-chain: <ConnectButton /> {mine && <button type="button" className="linkbtn" onClick={() => setStep("remove")}>Review the removal</button>}
@@ -188,6 +203,6 @@ function Inner({ own, onReady, onForget }: { own: OwnMemory | null; onReady: (m:
 
 function hexToBytes(h: string) { return Uint8Array.from(h.match(/.{2}/g)!.map((x) => parseInt(x, 16))); }
 
-export function OwnMemoryPanel(props: { own: OwnMemory | null; onReady: (m: OwnMemory) => void; onForget: () => void }) {
+export function OwnMemoryPanel(props: { own: OwnMemory | null; onReady: (m: OwnMemory) => void; onForget: () => void; rules?: number }) {
   return <DAppKitProvider dAppKit={dAppKit}><Inner {...props} /></DAppKitProvider>;
 }

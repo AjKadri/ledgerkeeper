@@ -387,7 +387,7 @@ export default function Home() {
       <Segmented label="Memory" value={memMode} onChange={chooseMem} disabled={busy}
         options={[{ value: "demo", text: "Demo memory" }, { value: "own", text: "Use my own memory (beta)" }]} />
       {memMode === "own" && (
-        <OwnMemoryPanel own={own} onReady={(m) => { setOwn(m); ownRef.current = m; }} onForget={() => { forgetOwn(); setOwn(null); ownRef.current = null; setDrawer(null); setRes(null); setSaves({}); setOutcome(null); say("This browser forgot your key."); }} />
+        <OwnMemoryPanel own={own} rules={drawer?.rules.length} onReady={(m) => { setOwn(m); ownRef.current = m; }} onForget={() => { forgetOwn(); setOwn(null); ownRef.current = null; setDrawer(null); setRes(null); setSaves({}); setOutcome(null); say("This browser forgot your key."); }} />
       )}
     </div>
   );

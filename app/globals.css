@@ -908,3 +908,9 @@ main [id], .pp[id] { scroll-margin-top: 88px; }
 .frame--b .lab { white-space: normal; }
 .outcome-line { margin-top: 10px; font-size: var(--t-14); max-width: 70ch; }
 .outcome-line b { font-weight: 650; }
+
+/* own-memory panel: one-line summary first, account details collapsed */
+.own__summary { margin: 0 0 10px; }
+.own__details { margin-top: 14px; }
+.own__details summary { cursor: pointer; font-weight: 600; width: fit-content; }
+.own__details > p { margin: 10px 0 0; }
