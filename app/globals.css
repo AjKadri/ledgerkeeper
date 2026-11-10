@@ -588,7 +588,10 @@ input.field--text { font-family: inherit; min-height: 40px; padding: 6px 10px; w
 .shot--narrow { max-width: 360px; justify-self: start; }
 
 /* ---------- own memory (beta) ---------- */
-.memchoice { margin-top: 20px; }
+.memchoice { margin-top: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+/* the switcher keeps its natural height on its own row, with or without the own-memory panel under it */
+.memchoice > .seg { flex: 0 0 auto; }
+.memchoice > .own { width: 100%; }
 .hero .memchoice { max-width: 640px; }
 .own { margin-top: 16px; padding: 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); max-width: 680px; font-size: var(--t-14); }
 .own p { margin: 0 0 12px; }
@@ -652,7 +655,7 @@ select.field, input.field--text { border-radius: var(--r-pill); padding: 6px 14p
 .app-start .hero__form { text-align: left; }
 .app-start .howto { text-align: left; border-top: 0; padding-top: 0; gap: 16px; max-width: none; }
 .app-start .howto > div { background: var(--sheet); border: 1px solid var(--card-border); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 20px; }
-.app-start .memchoice { display: flex; justify-content: center; }
+.app-start .memchoice { align-items: center; }
 .result.card .big { margin-top: 4px; }
 .q { background: var(--sheet); border: 1px solid var(--card-border); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 12px; border-top: 1px solid var(--card-border); }
 .q:first-child { padding-top: 20px; }
