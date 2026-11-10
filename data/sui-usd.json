@@ -1,7 +1,7 @@
 {
  "pool": "0xb8d7d9e66a60c239e7a60110efcf8de6c705580ed924d0dde141f4a0e2c90105",
  "basis": "Cetus SUI/USDC pool, price at the checkpoint nearest 12:00 UTC",
- "builtAt": "2026-11-07T19:10:38.423Z",
+ "builtAt": "2026-11-10T11:04:59.949Z",
  "prices": {
   "2026-01-24": {
    "checkpoint": 237850034,
@@ -1442,6 +1442,16 @@
    "checkpoint": 342629655,
    "ts": "2026-11-07T11:53:23.911Z",
    "price": 0.86054
+  },
+  "2026-11-08": {
+   "checkpoint": 342994199,
+   "ts": "2026-11-08T12:14:16.943Z",
+   "price": 0.85329
+  },
+  "2026-11-09": {
+   "checkpoint": 343353480,
+   "ts": "2026-11-09T12:10:13.927Z",
+   "price": 0.82896
   }
  }
 }
